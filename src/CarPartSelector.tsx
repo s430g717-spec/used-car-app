@@ -105,7 +105,7 @@ export default function CarPartSelector() {
         }}
       >
         <img 
-          src="/car_diagram.png" 
+          src={`${import.meta.env.BASE_URL}car_diagram.png`}
           alt="車両展開図" 
           loading="lazy"
           draggable={false}
