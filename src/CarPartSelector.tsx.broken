@@ -1,0 +1,249 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Calculator, AlertCircle } from 'lucide-react';
+import { DefectInputDialog, Defect } from './DefectInputDialog';
+import { EvaluationScoreDialog } from './EvaluationScoreDialog';
+
+type Hotspot = {
+  id: string;
+  label: string;
+  points?: string; // polygon points in viewBox (0-100)
+  d?: string;      // optional path 'd'
+  labelPos?: { x: number; y: number };
+};
+
+const HOTSPOTS: Hotspot[] = [
+  // Fバンパ�E: 上方向に少し移勁E
+  { id: 'front-bumper', label: 'Fバンパ�E', d: 'M33 7L67 7L67 16L33 16Z', labelPos: { x: 50, y: 11 } },
+
+  // ボンネッチE そ�Eまま
+  { id: 'hood', label: 'ボンネッチE, d: 'M33 17L67 17L67 30L33 30Z', labelPos: { x: 50, y: 23 } },
+
+  // Fガラス: 上方向に少し移勁E
+  { id: 'front-glass', label: 'Fガラス', d: 'M34 27L66 27L66 38L34 38Z', labelPos: { x: 50, y: 32 } },
+
+  // ルーチE 縦長にし横を少し狭ぁE
+  { id: 'roof', label: 'ルーチE, d: 'M36 37L64 37L64 60L36 60Z', labelPos: { x: 50, y: 48 } },
+
+  // 右Fフェンダー: 縦に篁E��庁E��
+  { id: 'right-front-fender', label: '右Fフェンダー', d: 'M66 14L86 14L86 36L66 36Z', labelPos: { x: 76, y: 25 } },
+
+  // 右Fドア: そ�Eまま
+  { id: 'right-front-door', label: '右Fドア', d: 'M66 37L84 37L84 49L66 49Z', labelPos: { x: 75, y: 43 } },
+
+  // 右Rドア: そ�Eまま
+  { id: 'right-rear-door', label: '右Rドア', d: 'M66 50L84 50L84 62L66 62Z', labelPos: { x: 75, y: 56 } },
+
+  // 右Rフェンダー: そ�Eまま
+  { id: 'right-rear-fender', label: '右Rフェンダー', d: 'M62 62L88 62L88 78L62 78Z', labelPos: { x: 75, y: 70 } },
+
+  // RゲーチE 少し下げて下方向に篁E��庁E��
+  { id: 'rear-gate', label: 'RゲーチE, d: 'M33 70L67 70L67 85L33 85Z', labelPos: { x: 50, y: 78 } },
+
+  // Rバンパ�E: 下に少し移勁E
+  { id: 'rear-bumper', label: 'Rバンパ�E', d: 'M33 88L67 88L67 96L33 96Z', labelPos: { x: 50, y: 92 } },
+
+  // 左Rフェンダー: そ�Eまま
+  { id: 'left-rear-fender', label: '左Rフェンダー', d: 'M12 62L38 62L38 78L12 78Z', labelPos: { x: 25, y: 70 } },
+
+  // 左Rドア: そ�Eまま
+  { id: 'left-rear-door', label: '左Rドア', d: 'M16 50L34 50L34 62L16 62Z', labelPos: { x: 25, y: 56 } },
+
+  // 左Fドア: そ�Eまま
+  { id: 'left-front-door', label: '左Fドア', d: 'M16 37L34 37L34 49L16 49Z', labelPos: { x: 25, y: 43 } },
+
+  // 左Fフェンダー: 縦に篁E��庁E��
+  { id: 'left-front-fender', label: '左Fフェンダー', d: 'M10 14L30 14L30 36L10 36Z', labelPos: { x: 20, y: 25 } },
+
+  // 左サイドスチE��チE 縦長に篁E��庁E��
+  { id: 'left-step', label: '左サイドスチE��チE, d: 'M6 32L16 32L16 68L6 68Z', labelPos: { x: 11, y: 50 } },
+
+  // 右サイドスチE��チE 縦長に篁E��庁E��
+  { id: 'right-step', label: '右サイドスチE��チE, d: 'M84 32L94 32L94 68L84 68Z', labelPos: { x: 89, y: 50 } },
+];
+
+export interface PartDefect {
+  partId: string;
+  partName: string;
+  defects: Defect[];
+}
+
+export function CarPartSelector() {
+  const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [scoreDialogOpen, setScoreDialogOpen] = useState(false);
+  const [partDefects, setPartDefects] = useState<PartDefect[]>([]);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [debugShow, setDebugShow] = useState(false);
+
+  // LocalStorageから復元
+  React.useEffect(() => {
+    const saved = localStorage.getItem('partDefects');
+    if (saved) {
+      try {
+        setPartDefects(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load defects', e);
+      }
+    }
+  }, []);
+
+  // 変更時にLocalStorageに保存
+  React.useEffect(() => {
+    if (partDefects.length > 0) {
+      localStorage.setItem('partDefects', JSON.stringify(partDefects));
+    }
+  }, [partDefects]);
+
+  const handleHotspotClick = (id: string) => {
+    console.log('hotspot click', id);
+    setSelectedHotspotId(id);
+    setDialogOpen(true);
+  };
+
+  const handleDefectsConfirm = (defects: Defect[]) => {
+    if (!selectedHotspotId) return;
+    const partName = HOTSPOTS.find(h => h.id === selectedHotspotId)?.label || selectedHotspotId;
+    const index = partDefects.findIndex(p => p.partId === selectedHotspotId);
+    const entry: PartDefect = { partId: selectedHotspotId, partName, defects };
+    if (defects.length === 0) {
+      if (index !== -1) setPartDefects(partDefects.filter(p => p.partId !== selectedHotspotId));
+    } else {
+      if (index !== -1) { const copy = [...partDefects]; copy[index] = entry; setPartDefects(copy); }
+      else setPartDefects([...partDefects, entry]);
+    }
+    setDialogOpen(false);
+    setSelectedHotspotId(null);
+  };
+
+  const getDefectLabel = (partId: string) => {
+    const d = partDefects.find(p => p.partId === partId)?.defects || [];
+    return d.length ? d.slice(0,2).map(x => `${x.type}${x.level}`).join(' ') : '';
+  };
+
+  const totalDefects = partDefects.reduce((s, p) => s + p.defects.length, 0);
+
+  return (
+    <div className="max-w-lg mx-auto space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>車体展開図�E�ライン沿ぁE�EチE��スポット！E/CardTitle>
+          <CardDescription>ラインに沿ってタチE�Eして瑕疵を�E力してください</CardDescription>
+          {totalDefects > 0 && (
+            <div className="mt-3 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-orange-600" />
+              <span className="text-sm text-orange-700">{totalDefects} 件の瑕疵�E�EpartDefects.length}/16箁E���E�E/span>
+            </div>
+          )}
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="relative bg-gradient-to-b from-slate-50 to-slate-100 rounded-lg p-4 border-2 border-slate-300">
+            <div className="relative w-full aspect-[1/1.3]">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full">
+                <image href="/car_diagram.png" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" style={{ pointerEvents: 'none' }} />
+
+                {HOTSPOTS.map(h => {
+                  const isHovered = hovered === h.id;
+                  const hasDef = partDefects.some(p => p.partId === h.id);
+                  const fill = debugShow ? (hasDef ? 'rgba(254,243,199,0.7)' : 'rgba(191,219,254,0.25)') : 'transparent';
+                  const stroke = hasDef ? '#f59e0b' : isHovered ? '#60a5fa' : 'transparent';
+                  return (
+                    <g key={h.id}>
+                      {h.points ? (
+                        <polygon
+                          points={h.points}
+                          fill={fill}
+                          stroke={stroke}
+                          strokeWidth={hasDef || isHovered ? 0.6 : 0.3}
+                          style={{ transition: 'all .12s', cursor: 'pointer', pointerEvents: 'visiblePainted' }}
+                          onClick={() => handleHotspotClick(h.id)}
+                          onTouchStart={() => handleHotspotClick(h.id)}
+                          onMouseEnter={() => setHovered(h.id)}
+                          onMouseLeave={() => setHovered(null)}
+                        />
+                      ) : h.d ? (
+                        <path
+                          d={h.d}
+                          fill={fill}
+                          stroke={stroke}
+                          strokeWidth={hasDef || isHovered ? 0.6 : 0.3}
+                          style={{ transition: 'all .12s', cursor: 'pointer', pointerEvents: 'visiblePainted' }}
+                          onClick={() => handleHotspotClick(h.id)}
+                          onTouchStart={() => handleHotspotClick(h.id)}
+                          onMouseEnter={() => setHovered(h.id)}
+                          onMouseLeave={() => setHovered(null)}
+                        />
+                      ) : null}
+
+                      {(hasDef || isHovered) && h.labelPos && (
+                        <text x={h.labelPos.x} y={h.labelPos.y} textAnchor="middle" dominantBaseline="middle" fontSize="3.5" fontWeight="700" fill={hasDef ? '#b91c1c' : '#1e40af'} pointerEvents="none">
+                          {hasDef ? getDefectLabel(h.id) || h.label : h.label}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            <div className="mt-4 pt-3 border-t text-xs text-slate-600 flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-yellow-100 border border-yellow-500 rounded"></div>
+                <span>瑕疵あり</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-blue-100 border border-blue-500 rounded"></div>
+                <span>ホバー/選抁E/span>
+              </div>
+              <button onClick={() => setDebugShow(s => !s)} className="ml-3 text-xs px-2 py-1 border rounded">DEBUG</button>
+            </div>
+          </div>
+
+          {partDefects.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm text-slate-700">登録済み瑕疵</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {partDefects.map(pd => (
+                  <div key={pd.partId} className="p-3 bg-white rounded-lg border hover:border-blue-300 cursor-pointer transition-colors" onClick={() => {
+                    setSelectedHotspotId(pd.partId);
+                    setDialogOpen(true);
+                  }}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm">{pd.partName}</div>
+                        <div className="flex gap-1 mt-1">
+                          {pd.defects.map((d, i) => <Badge key={i} variant="secondary" className="text-xs">{d.type}{d.level}</Badge>)}
+                        </div>
+                      </div>
+                      <Badge className="bg-orange-500">{pd.defects.length}件</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Button onClick={() => setScoreDialogOpen(true)} className="w-full" size="lg">
+            <Calculator className="w-4 h-4 mr-2" /> 評価点を算�E
+          </Button>
+        </CardContent>
+      </Card>
+
+      {selectedHotspotId && (
+        <DefectInputDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          partName={HOTSPOTS.find(h => h.id === selectedHotspotId)?.label || selectedHotspotId}
+          existingDefects={partDefects.find(p => p.partId === selectedHotspotId)?.defects || []}
+          onConfirm={handleDefectsConfirm}
+        />
+      )}
+
+      <EvaluationScoreDialog open={scoreDialogOpen} onOpenChange={setScoreDialogOpen} partDefects={partDefects} />
+    </div>
+  );
+}
+
