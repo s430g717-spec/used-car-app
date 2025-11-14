@@ -268,14 +268,7 @@ export function InspectorReport() {
           </div>
         </div>
 
-        <div style={{ marginBottom: 16, padding: 12, background: '#f1f5f9', borderRadius: 8 }}>
-          <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>文字数</div>
-          <div style={{ fontSize: 14, color: '#1e293b', fontWeight: 700, marginTop: 4 }}>
-            {charCount} 文字
-          </div>
-        </div>
-
-        <div>
+        <div style={{ marginTop: 20 }}>
           <textarea
             value={report.content}
             onChange={(e) => setReport({ content: e.target.value })}

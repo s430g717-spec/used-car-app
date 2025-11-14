@@ -77,7 +77,17 @@ export function SpecInput() {
   }, [spec.model]);
 
   const handleInput = (key: keyof CarSpec, value: string) => {
-    setSpec({ ...spec, [key]: value });
+    const newSpec = { ...spec, [key]: value };
+    
+    // 車体番号入力時にグレードを自動推測
+    if (key === 'chassisNumber' && value && newSpec.model) {
+      const inferredGrade = inferGradeFromChassis(newSpec.model, value);
+      if (inferredGrade && !newSpec.grade) {
+        newSpec.grade = inferredGrade.grade;
+      }
+    }
+    
+    setSpec(newSpec);
   };
 
   const handleClear = () => {
@@ -747,14 +757,14 @@ export function SpecInput() {
           </h3>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            {/* 前方画像 */}
+            {/* 外装画像 */}
             <div>
               <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
-                車両画像（前）
+                外装画像
               </label>
               {spec.frontImage ? (
                 <div style={{ position: 'relative' }}>
-                  <img src={spec.frontImage} alt="車両前方" style={{ width: '100%', borderRadius: 8, border: '2px solid #e2e8f0' }} />
+                  <img src={spec.frontImage} alt="外装" style={{ width: '100%', borderRadius: 8, border: '2px solid #e2e8f0' }} />
                   <button
                     onClick={() => handleInput('frontImage', '')}
                     style={{
@@ -806,14 +816,14 @@ export function SpecInput() {
               )}
             </div>
 
-            {/* 後方画像 */}
+            {/* 内装画像 */}
             <div>
               <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
-                車両画像（後）
+                内装画像
               </label>
               {spec.rearImage ? (
                 <div style={{ position: 'relative' }}>
-                  <img src={spec.rearImage} alt="車両後方" style={{ width: '100%', borderRadius: 8, border: '2px solid #e2e8f0' }} />
+                  <img src={spec.rearImage} alt="内装" style={{ width: '100%', borderRadius: 8, border: '2px solid #e2e8f0' }} />
                   <button
                     onClick={() => handleInput('rearImage', '')}
                     style={{

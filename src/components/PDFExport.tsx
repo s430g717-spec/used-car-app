@@ -359,77 +359,122 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
           </div>
         </div>
 
-        {/* 中段: 展開図 - プレミアムフレーム */}
+        {/* 中段: 検査員報告 + 展開図（2カラム） */}
         <div style={{
-          background: '#fff',
-          border: '3px solid #c9a961',
-          borderRadius: 8,
-          padding: 14,
-          marginBottom: 14,
-          minHeight: '120mm',
-          boxShadow: '0 4px 16px rgba(201,169,97,0.2)',
-          position: 'relative'
+          display: 'grid',
+          gridTemplateColumns: '1fr 2fr',
+          gap: 12,
+          marginBottom: 14
         }}>
+          {/* 左: 検査員報告・特記事項 */}
           <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 3,
-            background: 'linear-gradient(90deg, #c9a961 0%, #f4e5c3 50%, #c9a961 100%)',
-            borderRadius: '8px 8px 0 0'
-          }}></div>
-          <div style={{
-            fontSize: 13,
-            fontWeight: 900,
-            marginBottom: 10,
-            paddingBottom: 8,
-            borderBottom: '2px solid #c9a961',
-            color: '#1a1a2e',
-            letterSpacing: 1,
+            background: '#fff',
+            border: '2px solid #c9a961',
+            borderRadius: 8,
+            padding: 12,
+            boxShadow: '0 2px 8px rgba(201,169,97,0.15)',
             display: 'flex',
-            alignItems: 'center',
-            gap: 8
+            flexDirection: 'column'
           }}>
-            <span>🚗</span>
-            <span>外装状態評価図</span>
-            <span style={{ fontSize: 9, color: '#999', fontWeight: 500, marginLeft: 'auto' }}>
-              ※瑕疵箇所を詳細にマーキング
-            </span>
-          </div>
-          {diagramImage ? (
             <div style={{
+              fontSize: 12,
+              fontWeight: 900,
+              marginBottom: 8,
+              paddingBottom: 6,
+              borderBottom: '2px solid #c9a961',
+              color: '#1a1a2e',
+              letterSpacing: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}>
+              <span>✍️</span>
+              <span>検査員報告</span>
+            </div>
+            <div style={{
+              fontSize: 9,
+              lineHeight: 1.6,
+              whiteSpace: 'pre-wrap',
+              color: '#2a2a2a',
               background: '#f9f9f9',
               padding: 8,
               borderRadius: 6,
-              border: '1px solid #e8e8e8'
+              border: '1px solid #e8e8e8',
+              flex: 1,
+              fontWeight: 500,
+              overflowY: 'auto'
             }}>
-              <img 
-                src={diagramImage} 
-                alt="車両展開図"
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  maxHeight: '105mm',
-                  objectFit: 'contain',
-                  borderRadius: 4
-                }}
-              />
+              {typeof inspectorReport === 'string' ? inspectorReport : inspectorReport.content || '特記事項なし'}
             </div>
-          ) : (
+          </div>
+
+          {/* 右: 展開図 */}
+          <div style={{
+            background: '#fff',
+            border: '3px solid #c9a961',
+            borderRadius: 8,
+            padding: 12,
+            boxShadow: '0 4px 16px rgba(201,169,97,0.2)',
+            position: 'relative'
+          }}>
             <div style={{
-              fontSize: 11,
-              color: '#999',
-              textAlign: 'center',
-              paddingTop: 50,
-              paddingBottom: 50,
-              background: '#f9f9f9',
-              borderRadius: 6,
-              border: '1px dashed #ccc'
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 3,
+              background: 'linear-gradient(90deg, #c9a961 0%, #f4e5c3 50%, #c9a961 100%)',
+              borderRadius: '8px 8px 0 0'
+            }}></div>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 900,
+              marginBottom: 8,
+              paddingBottom: 6,
+              borderBottom: '2px solid #c9a961',
+              color: '#1a1a2e',
+              letterSpacing: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
             }}>
-              展開図を読み込み中...
+              <span>🚗</span>
+              <span>外装状態評価図</span>
             </div>
-          )}
+            {diagramImage ? (
+              <div style={{
+                background: '#f9f9f9',
+                padding: 6,
+                borderRadius: 6,
+                border: '1px solid #e8e8e8'
+              }}>
+                <img 
+                  src={diagramImage} 
+                  alt="車両展開図"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: '90mm',
+                    objectFit: 'contain',
+                    borderRadius: 4
+                  }}
+                />
+              </div>
+            ) : (
+              <div style={{
+                fontSize: 10,
+                color: '#999',
+                textAlign: 'center',
+                paddingTop: 40,
+                paddingBottom: 40,
+                background: '#f9f9f9',
+                borderRadius: 6,
+                border: '1px dashed #ccc'
+              }}>
+                展開図を読み込み中...
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 下段: 車両画像 - ギャラリー風 */}
@@ -460,7 +505,7 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
               gap: 6
             }}>
               <span>📸</span>
-              <span>車両画像（前面）</span>
+              <span>外装画像</span>
             </div>
             {carSpec.frontImage ? (
               <div style={{
@@ -471,7 +516,7 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
               }}>
                 <img 
                   src={carSpec.frontImage} 
-                  alt="車両前方"
+                  alt="外装"
                   style={{
                     width: '100%',
                     height: 'auto',
@@ -522,7 +567,7 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
               gap: 6
             }}>
               <span>📸</span>
-              <span>車両画像（後面）</span>
+              <span>内装画像</span>
             </div>
             {carSpec.rearImage ? (
               <div style={{
@@ -533,7 +578,7 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
               }}>
                 <img 
                   src={carSpec.rearImage} 
-                  alt="車両後方"
+                  alt="内装"
                   style={{
                     width: '100%',
                     height: 'auto',
@@ -561,47 +606,6 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
                 <div>画像未登録</div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* 検査員報告 - プロフェッショナル */}
-        <div style={{
-          background: '#fff',
-          border: '2px solid #c9a961',
-          borderRadius: 8,
-          padding: 12,
-          minHeight: '28mm',
-          boxShadow: '0 2px 8px rgba(201,169,97,0.15)',
-          marginBottom: 8
-        }}>
-          <div style={{
-            fontSize: 12,
-            fontWeight: 900,
-            marginBottom: 8,
-            paddingBottom: 6,
-            borderBottom: '2px solid #c9a961',
-            color: '#1a1a2e',
-            letterSpacing: 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
-          }}>
-            <span>✍️</span>
-            <span>検査員報告・特記事項</span>
-          </div>
-          <div style={{
-            fontSize: 10,
-            lineHeight: 1.7,
-            whiteSpace: 'pre-wrap',
-            color: '#2a2a2a',
-            background: '#f9f9f9',
-            padding: 10,
-            borderRadius: 6,
-            border: '1px solid #e8e8e8',
-            minHeight: '18mm',
-            fontWeight: 500
-          }}>
-            {typeof inspectorReport === 'string' ? inspectorReport : inspectorReport.content || '特記事項なし'}
           </div>
         </div>
 

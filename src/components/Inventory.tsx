@@ -105,99 +105,18 @@ export function Inventory() {
           ➕ 現在のデータを在庫に追加
         </button>
 
-        {/* 検索・フィルターUI */}
-        <div style={{ marginBottom: 20 }}>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="🔍 車名、型式、年式、車体番号で検索..."
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              borderRadius: 8,
-              border: '2px solid #e2e8f0',
-              fontSize: 14,
-              marginBottom: 12,
-              outline: 'none',
-              transition: 'border-color 0.15s',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-            onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
-          />
-          
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => setFilterDefects('all')}
-              style={{
-                flex: 1,
-                padding: '10px 12px',
-                borderRadius: 6,
-                border: filterDefects === 'all' ? '2px solid #3b82f6' : '2px solid #e2e8f0',
-                background: filterDefects === 'all' ? '#eff6ff' : '#fff',
-                fontSize: 13,
-                fontWeight: 600,
-                color: filterDefects === 'all' ? '#2563eb' : '#64748b',
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              すべて
-            </button>
-            <button
-              onClick={() => setFilterDefects('none')}
-              style={{
-                flex: 1,
-                padding: '10px 12px',
-                borderRadius: 6,
-                border: filterDefects === 'none' ? '2px solid #10b981' : '2px solid #e2e8f0',
-                background: filterDefects === 'none' ? '#f0fdf4' : '#fff',
-                fontSize: 13,
-                fontWeight: 600,
-                color: filterDefects === 'none' ? '#059669' : '#64748b',
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              欠陥なし
-            </button>
-            <button
-              onClick={() => setFilterDefects('some')}
-              style={{
-                flex: 1,
-                padding: '10px 12px',
-                borderRadius: 6,
-                border: filterDefects === 'some' ? '2px solid #f59e0b' : '2px solid #e2e8f0',
-                background: filterDefects === 'some' ? '#fffbeb' : '#fff',
-                fontSize: 13,
-                fontWeight: 600,
-                color: filterDefects === 'some' ? '#d97706' : '#64748b',
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              欠陥あり
-            </button>
-          </div>
-        </div>
-
-        <div style={{ fontSize: 14, color: '#64748b', marginBottom: 12, fontWeight: 600 }}>
-          表示: {filteredItems.length}台 / 全{items.length}台
-        </div>
-
-        {filteredItems.length === 0 ? (
+        {items.length === 0 ? (
           <div style={{
             padding: 40,
             textAlign: 'center',
             color: '#94a3b8',
             fontSize: 14
           }}>
-            {items.length === 0 ? '在庫データがありません' : '検索結果がありません'}
+            在庫データがありません
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {filteredItems.map(item => (
+            {items.map(item => (
               <div
                 key={item.id}
                 style={{
