@@ -115,7 +115,30 @@ export default function CarPartSelector() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>車両展開図</h2>
+      <h2 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '24px', fontWeight: 700, color: '#1e293b' }}>車両展開図</h2>
+      
+      {/* 操作説明 */}
+      <div style={{
+        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        padding: '16px',
+        borderRadius: '12px',
+        marginBottom: '20px',
+        color: '#fff',
+        boxShadow: '0 4px 12px rgba(59,130,246,0.3)'
+      }}>
+        <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>👆</span>
+          <span>操作方法</span>
+        </div>
+        <div style={{ fontSize: '13px', lineHeight: 1.6, opacity: 0.95 }}>
+          ① 車両の各部位をタップして選択<br/>
+          ② 瑕疵の種類（キズ、ヘコミ等）を入力<br/>
+          ③ レベル（1〜3）と備考を入力して保存
+        </div>
+        <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', fontSize: '12px' }}>
+          <strong>💡 ヒント:</strong> 部位をタップすると、その部位の瑕疵入力画面が表示されます。複数の瑕疵を登録できます。
+        </div>
+      </div>
       
       <div 
         data-diagram="car-parts"

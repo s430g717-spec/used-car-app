@@ -43,10 +43,10 @@ export function InspectorReport() {
     };
   }, []);
 
-  // 自動保存機能
-  React.useEffect(() => {
+  const handleRegister = () => {
     localStorage.setItem('inspectorReport', JSON.stringify(report));
-  }, [report]);
+    alert('検査員報告を保存しました。在庫管理画面で登録してください。');
+  };
 
   const handleClear = () => {
     if (confirm('入力内容をクリアしますか？')) {
@@ -309,25 +309,26 @@ export function InspectorReport() {
           >
             クリア
           </button>
-          <div
+          <button
+            onClick={handleRegister}
             style={{
               flex: 2,
               padding: 14,
               borderRadius: 8,
               border: 'none',
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              fontSize: 14,
-              fontWeight: 600,
+              fontSize: 16,
+              fontWeight: 700,
               color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+              transition: 'transform 0.2s'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <span>✓</span>
-            <span>自動保存中</span>
-          </div>
+            💾 報告を登録
+          </button>
         </div>
       </div>
     </div>

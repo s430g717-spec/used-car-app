@@ -69,10 +69,34 @@ export function Inventory() {
     alert('在庫に追加しました');
   };
 
-  const generatePDF = (item: InventoryItem) => {
-    // PDF生成（実装は簡易版）
-    alert('PDF生成機能は開発中です。鑑定書のプレビューを表示します。');
-    setSelectedItem(item);
+  const generatePDF = async (item: InventoryItem) => {
+    try {
+      const { generateInspectionPDF } = await import('../utils/pdfGenerator');
+      const diagramImage = localStorage.getItem('diagramImage');
+      await generateInspectionPDF(item.carSpec, item.defects, item.inspectorReport, diagramImage);
+    } catch (error) {
+      console.error('PDF生成エラー:', error);
+      alert('PDF生成に失敗しました');
+    }
+  };
+
+  const editItem = (item: InventoryItem) => {
+    if (confirm('この車両データを編集モードに読み込みますか？')) {
+      localStorage.setItem('carSpec', JSON.stringify(item.carSpec));
+      localStorage.setItem('inspectorReport', JSON.stringify(item.inspectorReport));
+      localStorage.setItem('partDefects', JSON.stringify(item.defects));
+      window.dispatchEvent(new Event('storage'));
+      alert('データを読み込みました。各入力画面で編集してください。');
+    }
+  };
+
+  const deleteItem = (item: InventoryItem) => {
+    if (confirm(`${item.carSpec.name || '車両'}（末尾${item.carSpec.chassisNumber?.slice(-4) || '-'}）を削除しますか？`)) {
+      const updatedItems = items.filter(i => i.id !== item.id);
+      setItems(updatedItems);
+      localStorage.setItem('inventory', JSON.stringify(updatedItems));
+      alert('削除しました');
+    }
   };
 
   const closePreview = () => {
@@ -162,22 +186,65 @@ export function Inventory() {
                       })}
                     </div>
                   </div>
-                  <button
-                    onClick={() => generatePDF(item)}
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                      color: '#fff',
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
-                    }}
-                  >
-                    📄 鑑定書
-                  </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); generatePDF(item); }}
+                      style={{
+                        padding: '10px 18px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #c9a961 0%, #a08040 100%)',
+                        color: '#fff',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(201,169,97,0.3)',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      📄 鑑定書PDF
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); editItem(item); }}
+                      style={{
+                        padding: '10px 18px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        color: '#fff',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(59,130,246,0.3)',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      ✏️ 編集
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
+                      style={{
+                        padding: '10px 18px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                        color: '#fff',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(239,68,68,0.3)',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      �️ 削除
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
