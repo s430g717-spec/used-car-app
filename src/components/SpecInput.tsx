@@ -10,6 +10,8 @@ export interface CarSpec {
   grade: string;
   chassisNumber: string;
   mileage: string;
+  frontImage?: string;
+  rearImage?: string;
 }
 
 // 和暦・西暦の年式リスト生成
@@ -735,6 +737,133 @@ export function SpecInput() {
               onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
               onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
             />
+          </div>
+        </div>
+
+        {/* 車両画像 */}
+        <div style={{ marginTop: 24, padding: 20, background: '#f8fafc', borderRadius: 12 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#1e293b' }}>
+            📷 車両画像（鑑定書用）
+          </h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {/* 前方画像 */}
+            <div>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                車両画像（前）
+              </label>
+              {spec.frontImage ? (
+                <div style={{ position: 'relative' }}>
+                  <img src={spec.frontImage} alt="車両前方" style={{ width: '100%', borderRadius: 8, border: '2px solid #e2e8f0' }} />
+                  <button
+                    onClick={() => handleInput('frontImage', '')}
+                    style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      padding: '6px 12px',
+                      background: '#ef4444',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    削除
+                  </button>
+                </div>
+              ) : (
+                <label style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 150,
+                  border: '2px dashed #cbd5e1',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  background: '#fff'
+                }}>
+                  <span style={{ fontSize: 32, marginBottom: 8 }}>📷</span>
+                  <span style={{ fontSize: 13, color: '#64748b' }}>タップして撮影/選択</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => handleInput('frontImage', reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* 後方画像 */}
+            <div>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                車両画像（後）
+              </label>
+              {spec.rearImage ? (
+                <div style={{ position: 'relative' }}>
+                  <img src={spec.rearImage} alt="車両後方" style={{ width: '100%', borderRadius: 8, border: '2px solid #e2e8f0' }} />
+                  <button
+                    onClick={() => handleInput('rearImage', '')}
+                    style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      padding: '6px 12px',
+                      background: '#ef4444',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    削除
+                  </button>
+                </div>
+              ) : (
+                <label style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 150,
+                  border: '2px dashed #cbd5e1',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  background: '#fff'
+                }}>
+                  <span style={{ fontSize: 32, marginBottom: 8 }}>📷</span>
+                  <span style={{ fontSize: 13, color: '#64748b' }}>タップして撮影/選択</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => handleInput('rearImage', reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              )}
+            </div>
           </div>
         </div>
 

@@ -45,7 +45,14 @@ export default function App() {
     // LocalStorageからデータ取得
     const carSpec: CarSpec = JSON.parse(localStorage.getItem('carSpec') || '{}');
     const partDefects: PartDefect[] = JSON.parse(localStorage.getItem('partDefects') || '[]');
-    const inspectorReport = localStorage.getItem('inspectorReport') || '';
+    const inspectorReportRaw = localStorage.getItem('inspectorReport') || '{"content":"","overallRating":"","interiorRating":""}';
+    
+    let inspectorReport;
+    try {
+      inspectorReport = JSON.parse(inspectorReportRaw);
+    } catch (e) {
+      inspectorReport = { content: '', overallRating: '', interiorRating: '' };
+    }
 
     switch(activeTab) {
       case 'diagram':
