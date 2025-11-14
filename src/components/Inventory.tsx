@@ -217,49 +217,42 @@ export function Inventory() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#1e293b' }}>
-                      {item.carSpec.name || '車名未設定'} ({item.carSpec.year || '-'})
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>
+                      {item.carSpec.name || '-'} 
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#64748b', marginLeft: 12 }}>
+                        {item.carSpec.chassisNumber 
+                          ? `末尾 ${item.carSpec.chassisNumber.slice(-4)}` 
+                          : '-'}
+                      </span>
                     </div>
-                    <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
-                      型式: {item.carSpec.model || '-'} | 車体番号: {item.carSpec.chassisNumber || '-'}
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                      {new Date(item.createdAt).toLocaleString('ja-JP', { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </div>
                   </div>
                   <button
                     onClick={() => generatePDF(item)}
                     style={{
-                      padding: '8px 16px',
-                      borderRadius: 6,
+                      padding: '10px 20px',
+                      borderRadius: 8,
                       border: 'none',
-                      background: '#ef4444',
+                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                       color: '#fff',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer'
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
                     }}
                   >
                     📄 鑑定書
                   </button>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, fontSize: 12 }}>
-                  <div style={{ padding: 8, background: '#f1f5f9', borderRadius: 6 }}>
-                    <div style={{ color: '#64748b', marginBottom: 2 }}>瑕疵</div>
-                    <div style={{ fontWeight: 700, color: '#1e293b' }}>{item.defects.length}箇所</div>
-                  </div>
-                  <div style={{ padding: 8, background: '#f1f5f9', borderRadius: 6 }}>
-                    <div style={{ color: '#64748b', marginBottom: 2 }}>検査項目</div>
-                    <div style={{ fontWeight: 700, color: '#1e293b' }}>
-                      {Object.values(item.inspectorReport || {}).filter(v => v).length}/12
-                    </div>
-                  </div>
-                  <div style={{ padding: 8, background: '#f1f5f9', borderRadius: 6 }}>
-                    <div style={{ color: '#64748b', marginBottom: 2 }}>登録日時</div>
-                    <div style={{ fontWeight: 700, color: '#1e293b', fontSize: 11 }}>
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
                 </div>
               </div>
             ))}
