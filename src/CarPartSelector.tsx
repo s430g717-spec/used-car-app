@@ -154,22 +154,38 @@ export default function CarPartSelector() {
                   onTouchCancel={() => setActivePart(null)}
                   onClick={() => openDefectDialog(hotspot.id)}
                 />
-                {hasDefects && (
-                  <text
-                    x={hotspot.labelPos.x}
-                    y={hotspot.labelPos.y + 0.5}
-                    textAnchor="middle"
-                    fontSize="4.5"
-                    fill="#dc2626"
-                    fontWeight="bold"
-                    pointerEvents="none"
-                    stroke="#fff"
-                    strokeWidth="0.3"
-                    paintOrder="stroke"
-                  >
-                    {defectLabels.join(' ')}
-                  </text>
-                )}
+                {hasDefects && (() => {
+                  // 部位ごとに表示位置をオフセット
+                  let offsetY = 0.5;
+                  
+                  if (hotspot.id === 'front-bumper') {
+                    // Fバンパーは上方向にオフセット
+                    offsetY = -3;
+                  } else if (hotspot.id === 'rear-gate') {
+                    // Rゲートは下方向にオフセット
+                    offsetY = 4;
+                  } else if (hotspot.id === 'rear-bumper') {
+                    // Rバンパーは下方向にオフセット
+                    offsetY = 4;
+                  }
+                  
+                  return (
+                    <text
+                      x={hotspot.labelPos.x}
+                      y={hotspot.labelPos.y + offsetY}
+                      textAnchor="middle"
+                      fontSize="6"
+                      fill="#dc2626"
+                      fontWeight="bold"
+                      pointerEvents="none"
+                      stroke="#fff"
+                      strokeWidth="0.4"
+                      paintOrder="stroke"
+                    >
+                      {defectLabels.join(' ')}
+                    </text>
+                  );
+                })()}
               </g>
             );
           })}
