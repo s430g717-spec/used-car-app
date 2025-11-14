@@ -66,7 +66,17 @@ export function Inventory() {
     const updatedItems = [newItem, ...items];
     setItems(updatedItems);
     localStorage.setItem('inventory', JSON.stringify(updatedItems));
-    alert('在庫に追加しました');
+    
+    // 全データをクリアして新規状態に戻す
+    localStorage.removeItem('carSpec');
+    localStorage.removeItem('inspectorReport');
+    localStorage.removeItem('partDefects');
+    localStorage.removeItem('diagramImage');
+    
+    // 各コンポーネントに更新を通知
+    window.dispatchEvent(new Event('storage'));
+    
+    alert('在庫に追加しました。入力データをクリアしました。');
   };
 
   const generatePDF = async (item: InventoryItem) => {
