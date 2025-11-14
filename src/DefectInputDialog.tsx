@@ -74,8 +74,8 @@ export function DefectInputDialog(props: {
 
     const code = touchStartPos.current.code;
     
-    // Gは常にレベルなし
-    if (code === 'G') {
+    // レベルなしの瑕疵（G、S1、S2、交換）
+    if (code === 'G' || code === 'S1' || code === 'S2' || code === '✖✖') {
       quickAdd({ type: code });
       touchStartPos.current = null;
       setActiveType(null);
@@ -103,14 +103,6 @@ export function DefectInputDialog(props: {
         
         quickAdd({ type: code, level });
       }
-      touchStartPos.current = null;
-      setActiveType(null);
-      return;
-    }
-    
-    // 交換（✖✖）はどの方向でもレベルなしで入力
-    if (code === '✖✖') {
-      quickAdd({ type: code });
       touchStartPos.current = null;
       setActiveType(null);
       return;
@@ -155,7 +147,9 @@ export function DefectInputDialog(props: {
     { code: 'U', label: '凹み', hasLevel: true },
     { code: 'B', label: 'キズ凹', hasLevel: true },
     { code: 'W', label: '補修', hasLevel: true },
-    { code: '✖✖', label: '交換', hasLevel: true }
+    { code: 'S1', label: 'サビ小', hasLevel: false },
+    { code: 'S2', label: 'サビ大', hasLevel: false },
+    { code: '✖✖', label: '交換', hasLevel: false }
   ];
 
   return (
@@ -401,46 +395,66 @@ export function DefectInputDialog(props: {
                     <>
                       <div style={{
                         position: 'absolute',
-                        top: -28,
-                        fontSize: 14,
-                        fontWeight: 800,
+                        top: -45,
+                        fontSize: 22,
+                        fontWeight: 900,
                         color: '#3b82f6',
-                        textShadow: '0 0 4px #fff, 0 0 8px #fff'
+                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
+                        background: 'rgba(255,255,255,0.95)',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        border: '3px solid #3b82f6'
                       }}>↑割れ</div>
                       <div style={{
                         position: 'absolute',
-                        bottom: -28,
-                        fontSize: 14,
-                        fontWeight: 800,
+                        bottom: -45,
+                        fontSize: 22,
+                        fontWeight: 900,
                         color: '#3b82f6',
-                        textShadow: '0 0 4px #fff, 0 0 8px #fff'
+                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
+                        background: 'rgba(255,255,255,0.95)',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        border: '3px solid #3b82f6'
                       }}>↓リペア</div>
                     </>
-                  ) : type.code !== 'G' && (
+                  ) : type.code !== 'G' && type.code !== 'S1' && type.code !== 'S2' && type.code !== '✖✖' && (
                     <>
                       <div style={{
                         position: 'absolute',
-                        top: -28,
-                        fontSize: 16,
-                        fontWeight: 800,
+                        top: -45,
+                        fontSize: 26,
+                        fontWeight: 900,
                         color: '#3b82f6',
-                        textShadow: '0 0 4px #fff, 0 0 8px #fff'
+                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
+                        background: 'rgba(255,255,255,0.95)',
+                        padding: '8px 16px',
+                        borderRadius: '10px',
+                        border: '3px solid #3b82f6'
                       }}>↑1</div>
                       <div style={{
                         position: 'absolute',
-                        right: -28,
-                        fontSize: 16,
-                        fontWeight: 800,
+                        right: -45,
+                        fontSize: 26,
+                        fontWeight: 900,
                         color: '#3b82f6',
-                        textShadow: '0 0 4px #fff, 0 0 8px #fff'
+                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
+                        background: 'rgba(255,255,255,0.95)',
+                        padding: '8px 16px',
+                        borderRadius: '10px',
+                        border: '3px solid #3b82f6'
                       }}>→2</div>
                       <div style={{
                         position: 'absolute',
-                        bottom: -28,
-                        fontSize: 16,
-                        fontWeight: 800,
+                        bottom: -45,
+                        fontSize: 26,
+                        fontWeight: 900,
                         color: '#3b82f6',
-                        textShadow: '0 0 4px #fff, 0 0 8px #fff'
+                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
+                        background: 'rgba(255,255,255,0.95)',
+                        padding: '8px 16px',
+                        borderRadius: '10px',
+                        border: '3px solid #3b82f6'
                       }}>↓3</div>
                     </>
                   )}

@@ -47,6 +47,7 @@ export default function CarPartSelector() {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activePart, setActivePart] = useState<string | null>(null); // タップ中の部位を追跡
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const partDefectLabels = React.useMemo(() => {
     const labels: Record<string, string[]> = {};
@@ -115,30 +116,82 @@ export default function CarPartSelector() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '12px', fontSize: '24px', fontWeight: 700, color: '#1e293b' }}>車両展開図</h2>
-      
-      {/* 操作説明 */}
-      <div style={{
-        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        padding: '16px',
-        borderRadius: '12px',
-        marginBottom: '20px',
-        color: '#fff',
-        boxShadow: '0 4px 12px rgba(59,130,246,0.3)'
-      }}>
-        <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>👆</span>
-          <span>操作方法</span>
-        </div>
-        <div style={{ fontSize: '13px', lineHeight: 1.6, opacity: 0.95 }}>
-          ① 車両の各部位をタップして選択<br/>
-          ② 瑕疵の種類（キズ、ヘコミ等）を入力<br/>
-          ③ レベル（1〜3）と備考を入力して保存
-        </div>
-        <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', fontSize: '12px' }}>
-          <strong>💡 ヒント:</strong> 部位をタップすると、その部位の瑕疵入力画面が表示されます。複数の瑕疵を登録できます。
-        </div>
+      <div style={{ position: 'relative', marginBottom: '20px' }}>
+        <h2 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 700, color: '#1e293b' }}>車両展開図</h2>
+        
+        {/* 右上のiボタン */}
+        <button
+          onClick={() => setShowInfoModal(true)}
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            border: '2px solid #3b82f6',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            color: '#fff',
+            fontSize: '20px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          ⓘ
+        </button>
       </div>
+      
+      {/* 操作説明モーダル */}
+      {showInfoModal && (
+        <div
+          onClick={() => setShowInfoModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 20
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              padding: '24px',
+              borderRadius: '16px',
+              maxWidth: '500px',
+              color: '#fff',
+              boxShadow: '0 8px 32px rgba(59,130,246,0.5)'
+            }}
+          >
+            <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>👆</span>
+              <span>操作方法</span>
+            </div>
+            <div style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '16px' }}>
+              ① 車両の各部位をタップして選択<br/>
+              ② 瑕疵の種類（キズ、ヘコミ等）を入力<br/>
+              ③ レベル（1〜3）と備考を入力して保存
+            </div>
+            <div style={{ padding: '14px', background: 'rgba(255,255,255,0.2)', borderRadius: '10px', fontSize: '14px', marginBottom: '16px' }}>
+              <strong>💡 ヒント:</strong> 部位をタップすると、その部位の瑕疵入力画面が表示されます。複数の瑕疵を登録できます。
+            </div>
+            <div style={{ textAlign: 'center', fontSize: '13px', opacity: 0.9 }}>
+              画面をタップして閉じる
+            </div>
+          </div>
+        </div>
+      )}
       
       <div 
         data-diagram="car-parts"

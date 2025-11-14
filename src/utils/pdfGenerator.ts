@@ -136,25 +136,19 @@ function createInspectionHTML(
         </div>
       </div>
 
-      <!-- 瑕疵一覧 -->
-      <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 2px solid #c9a961;">
-        <h3 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #c9a961; padding-bottom: 6px;">瑕疵一覧</h3>
-        ${defectRows || '<div style="text-align: center; padding: 20px; color: #999; font-size: 11px;">瑕疵なし</div>'}
-      </div>
-
       <!-- 車両画像 -->
       ${carSpec.frontImage || carSpec.rearImage ? `
-        <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
           ${carSpec.frontImage ? `
-            <div>
-              <div style="font-size: 11px; font-weight: 600; color: #666; margin-bottom: 6px;">外装</div>
-              <img src="${carSpec.frontImage}" style="width: 100%; height: auto; border-radius: 8px; border: 2px solid #c9a961;" />
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 2px solid #c9a961;">
+              <div style="font-size: 12px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; text-align: center;">外装</div>
+              <img src="${carSpec.frontImage}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #e0e0e0;" />
             </div>
           ` : ''}
           ${carSpec.rearImage ? `
-            <div>
-              <div style="font-size: 11px; font-weight: 600; color: #666; margin-bottom: 6px;">内装</div>
-              <img src="${carSpec.rearImage}" style="width: 100%; height: auto; border-radius: 8px; border: 2px solid #c9a961;" />
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 2px solid #c9a961;">
+              <div style="font-size: 12px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; text-align: center;">内装</div>
+              <img src="${carSpec.rearImage}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #e0e0e0;" />
             </div>
           ` : ''}
         </div>

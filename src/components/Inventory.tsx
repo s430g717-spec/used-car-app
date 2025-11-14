@@ -112,7 +112,7 @@ export function Inventory() {
 
         <div style={{ textAlign: 'center', marginBottom: 16, padding: 12, background: '#f8fafc', borderRadius: 8 }}>
           <div style={{ fontSize: 14, color: '#64748b' }}>
-            <strong>鑑定料金:</strong> ¥1,650/台 | <strong>在庫数:</strong> {items.length}台 | <strong>合計:</strong> <span style={{ color: '#059669', fontWeight: 600 }}>¥{(items.length * 1650).toLocaleString()}</span>
+            <strong>鑑定料金:</strong> ¥1,500/台 | <strong>在庫数:</strong> {items.length}台 | <strong>合計:</strong> <span style={{ color: '#059669', fontWeight: 600 }}>¥{(items.length * 1500).toLocaleString()}</span>
           </div>
         </div>
 

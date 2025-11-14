@@ -17,7 +17,7 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
   // 請求書ページ生成関数
   const addInvoicePage = async (pdf: jsPDF, carSpec: CarSpec, pageWidth: number, pageHeight: number) => {
     const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    const unitPrice = 1650;
+    const unitPrice = 1500;
     const quantity = 1;
     const subtotal = unitPrice * quantity;
     const tax = Math.floor(subtotal * 0.1);
@@ -155,7 +155,7 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
     }
   };
 
-  const unitPrice = 1650;
+  const unitPrice = 1500;
   const quantity = 1;
   const subtotal = unitPrice * quantity;
   const tax = Math.floor(subtotal * 0.1);
