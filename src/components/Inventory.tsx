@@ -82,9 +82,15 @@ export function Inventory() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16, color: '#1e293b', textAlign: 'center' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: '#1e293b', textAlign: 'center' }}>
           在庫管理
         </h2>
+
+        <div style={{ textAlign: 'center', marginBottom: 16, padding: 12, background: '#f8fafc', borderRadius: 8 }}>
+          <div style={{ fontSize: 14, color: '#64748b' }}>
+            <strong>鑑定料金:</strong> ¥1,650/台 | <strong>在庫数:</strong> {items.length}台 | <strong>合計:</strong> <span style={{ color: '#059669', fontWeight: 600 }}>¥{(items.length * 1650).toLocaleString()}</span>
+          </div>
+        </div>
 
         <button
           onClick={addCurrentToInventory}

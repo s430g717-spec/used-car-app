@@ -186,7 +186,7 @@ export default function CarPartSelector() {
                     offsetY = -5;
                   } else if (hotspot.id === 'rear-gate') {
                     // Rゲートは下方向にオフセット
-                    offsetY = 6;
+                    offsetY = 8;
                   } else if (hotspot.id === 'rear-bumper') {
                     // Rバンパーは下方向にオフセット
                     offsetY = 6;

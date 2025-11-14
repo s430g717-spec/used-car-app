@@ -33,6 +33,122 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
     captureDiagram();
   }, []);
 
+  // 請求書ページ生成関数
+  const addInvoicePage = async (pdf: jsPDF, carSpec: CarSpec, pageWidth: number, pageHeight: number) => {
+    const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const unitPrice = 1650;
+    const quantity = 1;
+    const subtotal = unitPrice * quantity;
+    const tax = Math.floor(subtotal * 0.1);
+    const total = subtotal + tax;
+
+    // ヘッダー
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('請求書', pageWidth / 2, 25, { align: 'center' });
+
+    // 発行日
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`発行日: ${today}`, 15, 40);
+
+    // 宛名
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('御中', 15, 55);
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+
+    // 請求元情報
+    pdf.text('株式会社カーインスペクション', pageWidth - 15, 40, { align: 'right' });
+    pdf.text('〒000-0000 東京都○○区○○', pageWidth - 15, 47, { align: 'right' });
+    pdf.text('TEL: 00-0000-0000', pageWidth - 15, 54, { align: 'right' });
+
+    // 車両情報
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('【車両情報】', 15, 70);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.text(`車名: ${carSpec.name || '-'}`, 15, 77);
+    pdf.text(`車体番号: ${carSpec.chassisNumber || '-'}`, 15, 84);
+    pdf.text(`型式: ${carSpec.model || '-'}`, 15, 91);
+
+    // 明細表
+    const tableTop = 105;
+    const colWidths = [15, 80, 30, 30, 35];
+    const rowHeight = 8;
+
+    // 表ヘッダー
+    pdf.setFillColor(26, 26, 46);
+    pdf.rect(15, tableTop, colWidths.reduce((a, b) => a + b, 0), rowHeight, 'F');
+    pdf.setTextColor(201, 169, 97);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    
+    let xPos = 15;
+    pdf.text('No.', xPos + 5, tableTop + 5.5);
+    xPos += colWidths[0];
+    pdf.text('品目', xPos + 5, tableTop + 5.5);
+    xPos += colWidths[1];
+    pdf.text('数量', xPos + 10, tableTop + 5.5);
+    xPos += colWidths[2];
+    pdf.text('単価', xPos + 10, tableTop + 5.5);
+    xPos += colWidths[3];
+    pdf.text('金額', xPos + 10, tableTop + 5.5);
+
+    // 明細行
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont('helvetica', 'normal');
+    const dataTop = tableTop + rowHeight;
+    
+    xPos = 15;
+    pdf.text('1', xPos + 5, dataTop + 5.5);
+    xPos += colWidths[0];
+    pdf.text('車両鑑定料', xPos + 5, dataTop + 5.5);
+    xPos += colWidths[1];
+    pdf.text(`${quantity}`, xPos + 15, dataTop + 5.5, { align: 'right' });
+    xPos += colWidths[2];
+    pdf.text(`¥${unitPrice.toLocaleString()}`, xPos + 25, dataTop + 5.5, { align: 'right' });
+    xPos += colWidths[3];
+    pdf.text(`¥${subtotal.toLocaleString()}`, xPos + 30, dataTop + 5.5, { align: 'right' });
+
+    // 罫線
+    pdf.setDrawColor(200, 200, 200);
+    for (let i = 0; i <= 2; i++) {
+      pdf.line(15, tableTop + (i * rowHeight), 15 + colWidths.reduce((a, b) => a + b, 0), tableTop + (i * rowHeight));
+    }
+    
+    xPos = 15;
+    for (let i = 0; i <= colWidths.length; i++) {
+      pdf.line(xPos, tableTop, xPos, tableTop + (2 * rowHeight));
+      if (i < colWidths.length) xPos += colWidths[i];
+    }
+
+    // 合計欄
+    const summaryTop = dataTop + rowHeight + 10;
+    const summaryX = pageWidth - 80;
+    
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('小計:', summaryX, summaryTop);
+    pdf.text(`¥${subtotal.toLocaleString()}`, summaryX + 50, summaryTop, { align: 'right' });
+    
+    pdf.text('消費税(10%):', summaryX, summaryTop + 7);
+    pdf.text(`¥${tax.toLocaleString()}`, summaryX + 50, summaryTop + 7, { align: 'right' });
+    
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(12);
+    pdf.text('合計金額:', summaryX, summaryTop + 17);
+    pdf.text(`¥${total.toLocaleString()}`, summaryX + 50, summaryTop + 17, { align: 'right' });
+
+    // フッター
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('上記の通り、ご請求申し上げます。', 15, summaryTop + 35);
+    pdf.text('お振込先: ○○銀行 ○○支店 普通 1234567', 15, pageHeight - 20);
+  };
+
   const generatePDF = async () => {
     if (!previewRef.current) {
       alert('プレビューエリアが見つかりません');
@@ -64,11 +180,15 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
       const imgWidth = pageWidth - 20; // 左右10mmマージン
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      // 画像をPDFに追加
+      // 画像をPDFに追加（鑑定書ページ）
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
       
+      // 2ページ目：請求書を追加
+      pdf.addPage();
+      await addInvoicePage(pdf, carSpec, pageWidth, pageHeight);
+      
       // ファイル名生成
-      const fileName = `鑑定書_${carSpec.name || '車両'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `鑑定書_請求書_${carSpec.name || '車両'}_${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(fileName);
       
       if (onExport) onExport();
