@@ -9,6 +9,7 @@ export interface CarSpec {
   name: string;
   grade: string;
   chassisNumber: string;
+  mileage: string;
 }
 
 // 和暦・西暦の年式リスト生成
@@ -42,7 +43,8 @@ export function SpecInput() {
       model: '',
       name: '',
       grade: '',
-      chassisNumber: ''
+      chassisNumber: '',
+      mileage: ''
     };
   });
   
@@ -83,7 +85,8 @@ export function SpecInput() {
         model: '',
         name: '',
         grade: '',
-        chassisNumber: ''
+        chassisNumber: '',
+        mileage: ''
       };
       setSpec(emptySpec);
       localStorage.setItem('carSpec', JSON.stringify(emptySpec));
@@ -207,13 +210,14 @@ export function SpecInput() {
     if (saved) {
       try {
         const loaded = JSON.parse(saved);
-        // gradeフィールドがない古いデータに対応
+        // 古いデータに対応（mileageフィールドを追加）
         setSpec({
           year: loaded.year || '',
           model: loaded.model || '',
           name: loaded.name || '',
           grade: loaded.grade || '',
-          chassisNumber: loaded.chassisNumber || ''
+          chassisNumber: loaded.chassisNumber || '',
+          mileage: loaded.mileage || ''
         });
       } catch (e) {
         console.error('Failed to load saved spec', e);
@@ -695,6 +699,38 @@ export function SpecInput() {
                 transition: 'border-color 0.15s',
                 boxSizing: 'border-box',
                 textTransform: 'uppercase'
+              }}
+              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+              onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
+            />
+          </div>
+
+          {/* 走行距離 */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#475569',
+              marginBottom: 6
+            }}>
+              走行距離 (km)
+            </label>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={spec.mileage}
+              onChange={(e) => handleInput('mileage', e.target.value)}
+              placeholder="例: 50000"
+              style={{
+                width: '100%',
+                fontSize: 16,
+                padding: '12px 14px',
+                borderRadius: 8,
+                border: '2px solid #e2e8f0',
+                outline: 'none',
+                transition: 'border-color 0.15s',
+                boxSizing: 'border-box'
               }}
               onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
               onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}

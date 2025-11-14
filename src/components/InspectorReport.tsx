@@ -58,6 +58,30 @@ export function InspectorReport() {
 
   const charCount = report.content.length;
 
+  // 諸元データを取得
+  const [carSpec, setCarSpec] = React.useState<any>(() => {
+    const saved = localStorage.getItem('carSpec');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // carSpec の変更を監視
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('carSpec');
+      if (saved) {
+        setCarSpec(JSON.parse(saved));
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(handleStorageChange, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   // 参考値を計算
   const calculateSuggestedRating = React.useMemo(() => {
     const allDefects: any[] = [];
@@ -81,22 +105,87 @@ export function InspectorReport() {
       allDefects.filter(d => d.level === '1').map(d => d.part)
     ).size;
 
-    // 判定ロジック
+    // 走行距離による上限
+    const mileage = parseInt(carSpec.mileage || '0', 10);
+    let mileageMaxRating = 6;
+    let mileageReason = '';
+    
+    if (mileage < 10000) {
+      mileageMaxRating = 7; // S点許可（瑕疵なしなら）
+      mileageReason = '10,000km未満';
+    } else if (mileage < 30000) {
+      mileageMaxRating = 6;
+      mileageReason = '30,000km未満';
+    } else if (mileage < 50000) {
+      mileageMaxRating = 5;
+      mileageReason = '50,000km未満';
+    } else if (mileage < 100000) {
+      mileageMaxRating = 4.5;
+      mileageReason = '100,000km未満';
+    } else if (mileage < 150000) {
+      mileageMaxRating = 4;
+      mileageReason = '150,000km未満';
+    } else {
+      mileageMaxRating = 3.5;
+      mileageReason = '150,000km以上';
+    }
+
+    // 内装評価による上限
+    const interior = report.interiorRating || '';
+    let interiorMaxRating = 6;
+    let interiorReason = '';
+    
+    if (interior === 'B') {
+      interiorMaxRating = 4.5;
+      interiorReason = '内装Bランク';
+    } else if (interior === 'C') {
+      interiorMaxRating = 4;
+      interiorReason = '内装Cランク';
+    } else if (interior === 'D') {
+      interiorMaxRating = 3.5;
+      interiorReason = '内装Dランク';
+    } else if (interior === 'E') {
+      interiorMaxRating = 3;
+      interiorReason = '内装Eランク';
+    }
+
+    // 瑕疵による基準点
+    let defectRating = 6;
+    let defectReason = '';
+    
     if (levellessA === 0 && level1Count === 0 && level2Count === 0) {
-      return '6点 （瑕疵なし）';
+      defectRating = 7; // S点候補（瑕疵なし）
+      defectReason = '瑕疵なし';
+    } else if (levellessA <= 1 && level1Count === 0 && level2Count === 0) {
+      defectRating = 6;
+      defectReason = 'レベルなしA 1つまで';
+    } else if (level1Count <= 2 && level2Count === 0) {
+      defectRating = 5;
+      defectReason = 'レベル1 2つまで';
+    } else if (level1Panels <= 8 && level2Count <= 1) {
+      defectRating = 4.5;
+      defectReason = 'レベル1 8パネルまで / レベル2 1つまで';
+    } else {
+      defectRating = 4;
+      defectReason = '上記基準を超過';
     }
-    if (levellessA <= 1 && level1Count === 0 && level2Count === 0) {
-      return '6点 （レベルなしA 1つまで）';
-    }
-    if (level1Count <= 2 && level2Count === 0) {
-      return '5点 （レベル1 2つまで）';
-    }
-    if (level1Panels <= 8 && level2Count <= 1) {
-      return '4.5点 （レベル1 8パネルまで / レベル2 1つまで）';
+
+    // 最終評価は最も厳しい制限を適用
+    const finalRating = Math.min(defectRating, mileageMaxRating, interiorMaxRating);
+    
+    // S点の判定（瑕疵なし + 走行距離10,000km未満 + 内装A）
+    if (defectRating === 7 && mileageMaxRating === 7 && (interior === 'A' || interior === '')) {
+      return 'S点 （新古車相当：瑕疵なし、走行10,000km未満、内装A）';
     }
     
-    return '4点以下 （上記基準を超過）';
-  }, [partDefects]);
+    // 理由の組み立て
+    const reasons: string[] = [];
+    if (defectRating === finalRating) reasons.push(defectReason);
+    if (mileageMaxRating === finalRating && mileageReason) reasons.push(mileageReason);
+    if (interiorMaxRating === finalRating && interiorReason) reasons.push(interiorReason);
+    
+    return `${finalRating}点 （${reasons.join('、')})`;
+  }, [partDefects, carSpec, report.interiorRating]);
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: 20 }}>
