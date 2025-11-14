@@ -108,6 +108,14 @@ export function DefectInputDialog(props: {
       return;
     }
     
+    // 交換（✖✖）はどの方向でもレベルなしで入力
+    if (code === '✖✖') {
+      quickAdd({ type: code });
+      touchStartPos.current = null;
+      setActiveType(null);
+      return;
+    }
+    
     // 通常の瑕疵（レベル1-3）
     if (distance < 40) {
       quickAdd({ type: code });
@@ -173,7 +181,10 @@ export function DefectInputDialog(props: {
           maxWidth: 400,
           width: '100%',
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-          pointerEvents: 'all'
+          pointerEvents: 'all',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -236,7 +247,10 @@ export function DefectInputDialog(props: {
                     fontWeight: 600,
                     color: '#92400e',
                     cursor: 'pointer',
-                    transition: 'all 0.15s'
+                    transition: 'all 0.15s',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#fee2e2';
