@@ -43,7 +43,26 @@ export default function App() {
 
   const renderContent = () => {
     // LocalStorageからデータ取得
-    const carSpec: CarSpec = JSON.parse(localStorage.getItem('carSpec') || '{}');
+    const carSpecRaw = localStorage.getItem('carSpec') || '{}';
+    let carSpec: CarSpec;
+    try {
+      carSpec = JSON.parse(carSpecRaw);
+      // 画像フィールドが欠けている場合のデフォルト値
+      if (!carSpec.frontImage) carSpec.frontImage = '';
+      if (!carSpec.rearImage) carSpec.rearImage = '';
+    } catch (e) {
+      carSpec = { 
+        year: '', 
+        model: '', 
+        name: '', 
+        grade: '', 
+        chassisNumber: '', 
+        mileage: '',
+        frontImage: '',
+        rearImage: ''
+      };
+    }
+    
     const partDefects: PartDefect[] = JSON.parse(localStorage.getItem('partDefects') || '[]');
     const inspectorReportRaw = localStorage.getItem('inspectorReport') || '{"content":"","overallRating":"","interiorRating":""}';
     

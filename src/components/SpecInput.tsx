@@ -46,7 +46,9 @@ export function SpecInput() {
       name: '',
       grade: '',
       chassisNumber: '',
-      mileage: ''
+      mileage: '',
+      frontImage: '',
+      rearImage: ''
     };
   });
   
@@ -92,13 +94,15 @@ export function SpecInput() {
 
   const handleClear = () => {
     if (confirm('入力内容をクリアしますか？')) {
-      const emptySpec = {
+      const emptySpec: CarSpec = {
         year: '',
         model: '',
         name: '',
         grade: '',
         chassisNumber: '',
-        mileage: ''
+        mileage: '',
+        frontImage: '',
+        rearImage: ''
       };
       setSpec(emptySpec);
       localStorage.setItem('carSpec', JSON.stringify(emptySpec));
