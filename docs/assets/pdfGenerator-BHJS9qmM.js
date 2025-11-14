@@ -1,7 +1,7 @@
-import{E as v,h as m}from"./index-DDQ4YbNU.js";async function h(t,n,o,r){var e;const d=new v("p","mm","a4"),a=210,i=document.createElement("div");i.style.position="absolute",i.style.left="-9999px",i.style.width="210mm",i.innerHTML=c(t,n,o,r),document.body.appendChild(i);try{await new Promise(f=>setTimeout(f,300));const s=await m(i,{scale:2,useCORS:!0,allowTaint:!0,backgroundColor:"#ffffff",windowWidth:i.scrollWidth,windowHeight:i.scrollHeight}),l=s.toDataURL("image/png"),p=a-20,g=s.height*p/s.width;d.addImage(l,"PNG",10,10,p,g);const x=`鑑定書_${t.name||"車両"}_${((e=t.chassisNumber)==null?void 0:e.slice(-4))||""}_${new Date().toISOString().split("T")[0]}.pdf`;d.save(x)}finally{document.body.removeChild(i)}}function c(t,n,o,r){const d={};n.forEach(i=>{d[i.part]=i.defects.map(e=>`${e.type}${e.level||""}`)});const a={"front-bumper":"Fバンパー",hood:"ボンネット","front-glass":"Fガラス",roof:"ルーフ","right-front-fender":"右Fフェンダー","right-front-door":"右Fドア","right-rear-door":"右Rドア","right-rear-fender":"右Rフェンダー","rear-gate":"Rゲート","rear-bumper":"Rバンパー","left-rear-fender":"左Rフェンダー","left-rear-door":"左Rドア","left-front-door":"左Fドア","left-front-fender":"左Fフェンダー","left-step":"左ステップ","right-step":"右ステップ"};return Object.entries(d).map(([i,e])=>`
+import{E as v,h as m}from"./index-ChgpqqCD.js";async function b(t,n,o,r){var i;const d=new v("p","mm","a4"),a=210,e=document.createElement("div");e.style.position="absolute",e.style.left="-9999px",e.style.width="210mm",e.innerHTML=c(t,n,o,r),document.body.appendChild(e);try{await new Promise(f=>setTimeout(f,300));const s=await m(e,{scale:2,useCORS:!0,allowTaint:!0,backgroundColor:"#ffffff",windowWidth:e.scrollWidth,windowHeight:e.scrollHeight}),l=s.toDataURL("image/png"),p=a-20,g=s.height*p/s.width;d.addImage(l,"PNG",10,10,p,g);const x=`鑑定書_${t.name||"車両"}_${((i=t.chassisNumber)==null?void 0:i.slice(-4))||""}_${new Date().toISOString().split("T")[0]}.pdf`;d.save(x)}finally{document.body.removeChild(e)}}function c(t,n,o,r){const d={};n.forEach(e=>{d[e.part]=e.defects.map(i=>`${i.type}${i.level||""}`)});const a={"front-bumper":"Fバンパー",hood:"ボンネット","front-glass":"Fガラス",roof:"ルーフ","right-front-fender":"右Fフェンダー","right-front-door":"右Fドア","right-rear-door":"右Rドア","right-rear-fender":"右Rフェンダー","rear-gate":"Rゲート","rear-bumper":"Rバンパー","left-rear-fender":"左Rフェンダー","left-rear-door":"左Rドア","left-front-door":"左Fドア","left-front-fender":"左Fフェンダー","left-step":"左ステップ","right-step":"右ステップ"};return Object.entries(d).map(([e,i])=>`
       <div style="display: flex; border-bottom: 1px solid #e0e0e0; padding: 4px 0;">
-        <div style="flex: 0 0 100px; font-size: 11px; color: #333; font-weight: 600;">${a[i]||i}</div>
-        <div style="flex: 1; font-size: 11px; color: #555;">${e.join(", ")}</div>
+        <div style="flex: 0 0 100px; font-size: 11px; color: #333; font-weight: 600;">${a[e]||e}</div>
+        <div style="flex: 1; font-size: 11px; color: #555;">${i.join(", ")}</div>
       </div>
     `).join(""),`
     <div style="font-family: 'Noto Sans JP', 'Yu Gothic', 'Meiryo', sans-serif; background: #ffffff; padding: 12mm; box-sizing: border-box;">
@@ -17,13 +17,13 @@ import{E as v,h as m}from"./index-DDQ4YbNU.js";async function h(t,n,o,r){var e;c
         <!-- 左カラム: 検査員報告 (1:2の比率) -->
         <div style="flex: 1; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 2px solid #c9a961;">
           <h3 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #c9a961; padding-bottom: 6px;">検査員報告</h3>
-          <div style="margin-bottom: 10px;">
-            <div style="font-size: 10px; color: #666; margin-bottom: 4px;">総合評価</div>
-            <div style="font-size: 16px; font-weight: 700; color: #c9a961;">${o.overallRating||"-"}</div>
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 11px; color: #666; margin-bottom: 6px; font-weight: 600;">総合評価</div>
+            <div style="font-size: 32px; font-weight: 900; color: #c9a961; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">${o.overallRating||"-"}</div>
           </div>
-          <div style="margin-bottom: 10px;">
-            <div style="font-size: 10px; color: #666; margin-bottom: 4px;">内装評価</div>
-            <div style="font-size: 16px; font-weight: 700; color: #c9a961;">${o.interiorRating||"-"}</div>
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 11px; color: #666; margin-bottom: 6px; font-weight: 600;">内装評価</div>
+            <div style="font-size: 32px; font-weight: 900; color: #c9a961; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">${o.interiorRating||"-"}</div>
           </div>
           <div>
             <div style="font-size: 10px; color: #666; margin-bottom: 4px;">所見</div>
@@ -75,4 +75,4 @@ import{E as v,h as m}from"./index-DDQ4YbNU.js";async function h(t,n,o,r){var e;c
         <div style="font-size: 9px; color: #999; margin-top: 4px;">この鑑定書は専門検査員による詳細検査に基づいて発行されています</div>
       </div>
     </div>
-  `}export{h as generateInspectionPDF};
+  `}export{b as generateInspectionPDF};

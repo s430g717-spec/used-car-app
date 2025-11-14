@@ -102,13 +102,13 @@ function createInspectionHTML(
         <!-- 左カラム: 検査員報告 (1:2の比率) -->
         <div style="flex: 1; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 2px solid #c9a961;">
           <h3 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #c9a961; padding-bottom: 6px;">検査員報告</h3>
-          <div style="margin-bottom: 10px;">
-            <div style="font-size: 10px; color: #666; margin-bottom: 4px;">総合評価</div>
-            <div style="font-size: 16px; font-weight: 700; color: #c9a961;">${inspectorReport.overallRating || '-'}</div>
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 11px; color: #666; margin-bottom: 6px; font-weight: 600;">総合評価</div>
+            <div style="font-size: 32px; font-weight: 900; color: #c9a961; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">${inspectorReport.overallRating || '-'}</div>
           </div>
-          <div style="margin-bottom: 10px;">
-            <div style="font-size: 10px; color: #666; margin-bottom: 4px;">内装評価</div>
-            <div style="font-size: 16px; font-weight: 700; color: #c9a961;">${inspectorReport.interiorRating || '-'}</div>
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 11px; color: #666; margin-bottom: 6px; font-weight: 600;">内装評価</div>
+            <div style="font-size: 32px; font-weight: 900; color: #c9a961; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">${inspectorReport.interiorRating || '-'}</div>
           </div>
           <div>
             <div style="font-size: 10px; color: #666; margin-bottom: 4px;">所見</div>

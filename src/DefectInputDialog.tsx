@@ -389,7 +389,8 @@ export function DefectInputDialog(props: {
                   pointerEvents: 'none',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  zIndex: 9999
                 }}>
                   {type.code === 'ヒビ' ? (
                     <>
@@ -400,10 +401,12 @@ export function DefectInputDialog(props: {
                         fontWeight: 900,
                         color: '#3b82f6',
                         textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.95)',
+                        background: 'rgba(255,255,255,0.98)',
                         padding: '6px 12px',
                         borderRadius: '8px',
-                        border: '3px solid #3b82f6'
+                        border: '3px solid #3b82f6',
+                        zIndex: 10000,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}>↑割れ</div>
                       <div style={{
                         position: 'absolute',
@@ -412,10 +415,12 @@ export function DefectInputDialog(props: {
                         fontWeight: 900,
                         color: '#3b82f6',
                         textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.95)',
+                        background: 'rgba(255,255,255,0.98)',
                         padding: '6px 12px',
                         borderRadius: '8px',
-                        border: '3px solid #3b82f6'
+                        border: '3px solid #3b82f6',
+                        zIndex: 10000,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}>↓リペア</div>
                     </>
                   ) : type.code !== 'G' && type.code !== 'S1' && type.code !== 'S2' && type.code !== '✖✖' && (
@@ -427,10 +432,12 @@ export function DefectInputDialog(props: {
                         fontWeight: 900,
                         color: '#3b82f6',
                         textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.95)',
+                        background: 'rgba(255,255,255,0.98)',
                         padding: '8px 16px',
                         borderRadius: '10px',
-                        border: '3px solid #3b82f6'
+                        border: '3px solid #3b82f6',
+                        zIndex: 10000,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}>↑1</div>
                       <div style={{
                         position: 'absolute',
@@ -439,10 +446,12 @@ export function DefectInputDialog(props: {
                         fontWeight: 900,
                         color: '#3b82f6',
                         textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.95)',
+                        background: 'rgba(255,255,255,0.98)',
                         padding: '8px 16px',
                         borderRadius: '10px',
-                        border: '3px solid #3b82f6'
+                        border: '3px solid #3b82f6',
+                        zIndex: 10000,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}>→2</div>
                       <div style={{
                         position: 'absolute',
@@ -451,10 +460,12 @@ export function DefectInputDialog(props: {
                         fontWeight: 900,
                         color: '#3b82f6',
                         textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.95)',
+                        background: 'rgba(255,255,255,0.98)',
                         padding: '8px 16px',
                         borderRadius: '10px',
-                        border: '3px solid #3b82f6'
+                        border: '3px solid #3b82f6',
+                        zIndex: 10000,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                       }}>↓3</div>
                     </>
                   )}
