@@ -160,13 +160,13 @@ export default function CarPartSelector() {
                   
                   if (hotspot.id === 'front-bumper') {
                     // Fバンパーは上方向にオフセット
-                    offsetY = -3;
+                    offsetY = -5;
                   } else if (hotspot.id === 'rear-gate') {
                     // Rゲートは下方向にオフセット
-                    offsetY = 4;
+                    offsetY = 6;
                   } else if (hotspot.id === 'rear-bumper') {
                     // Rバンパーは下方向にオフセット
-                    offsetY = 4;
+                    offsetY = 6;
                   }
                   
                   return (
