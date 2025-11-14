@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import html2canvas from 'html2canvas';
 import { DefectInputDialog } from './DefectInputDialog';
 
 export interface Defect {
@@ -57,6 +58,28 @@ export default function CarPartSelector() {
 
   React.useEffect(() => {
     localStorage.setItem('partDefects', JSON.stringify(partDefects));
+    
+    // 展開図をキャプチャしてLocalStorageに保存
+    const captureDiagram = async () => {
+      const diagramElement = document.querySelector('[data-diagram="car-parts"]') as HTMLElement;
+      if (diagramElement) {
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500)); // レンダリング待機
+          const canvas = await html2canvas(diagramElement, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false
+          });
+          const imageData = canvas.toDataURL('image/png');
+          localStorage.setItem('diagramImage', imageData);
+          console.log('展開図をキャプチャしてLocalStorageに保存しました');
+        } catch (error) {
+          console.error('展開図キャプチャエラー:', error);
+        }
+      }
+    };
+    
+    captureDiagram();
   }, [partDefects]);
 
   const openDefectDialog = (partId: string) => {

@@ -17,28 +17,21 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
   const [diagramImage, setDiagramImage] = React.useState<string | null>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
 
-  // 展開図をキャプチャ
+  // 展開図をキャプチャ（マウント時に一度だけ実行）
   React.useEffect(() => {
     const captureDiagram = async () => {
-      const diagramElement = document.querySelector('[data-diagram="car-parts"]') as HTMLElement;
-      if (diagramElement) {
-        try {
-          const canvas = await html2canvas(diagramElement, {
-            scale: 2,
-            backgroundColor: '#ffffff',
-            logging: false
-          });
-          setDiagramImage(canvas.toDataURL('image/png'));
-        } catch (error) {
-          console.error('展開図キャプチャエラー:', error);
-        }
+      // LocalStorageから展開図画像を取得
+      const savedDiagramImage = localStorage.getItem('diagramImage');
+      if (savedDiagramImage) {
+        setDiagramImage(savedDiagramImage);
+        console.log('展開図をLocalStorageから読み込みました');
+      } else {
+        console.warn('展開図画像がLocalStorageに保存されていません');
       }
     };
     
-    if (!isGenerating) {
-      captureDiagram();
-    }
-  }, [partDefects, isGenerating]);
+    captureDiagram();
+  }, []);
 
   const generatePDF = async () => {
     if (!previewRef.current) {
