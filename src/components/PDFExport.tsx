@@ -118,69 +118,128 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 20, background: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)', minHeight: '100vh' }}>
+      {/* プレミアムボタン */}
       <button
         onClick={generatePDF}
         disabled={isGenerating}
         style={{
           width: '100%',
-          padding: 16,
-          borderRadius: 8,
-          border: 'none',
-          background: isGenerating ? '#94a3b8' : 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+          padding: 18,
+          borderRadius: 12,
+          border: '3px solid #c9a961',
+          background: isGenerating 
+            ? 'linear-gradient(135deg, #6c757d 0%, #495057 100%)' 
+            : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
           fontSize: 18,
-          fontWeight: 700,
-          color: '#fff',
+          fontWeight: 900,
+          color: '#c9a961',
           cursor: isGenerating ? 'not-allowed' : 'pointer',
-          boxShadow: '0 4px 12px rgba(220,38,38,0.3)',
-          marginBottom: 20
+          boxShadow: isGenerating 
+            ? '0 4px 12px rgba(108,117,125,0.3)'
+            : '0 6px 20px rgba(201,169,97,0.4)',
+          marginBottom: 24,
+          textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+          letterSpacing: 2,
+          transition: 'all 0.3s ease',
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
-        {isGenerating ? '📄 PDF生成中...' : '📄 鑑定書をPDF出力'}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: 'linear-gradient(90deg, #c9a961 0%, #f4e5c3 50%, #c9a961 100%)'
+        }}></div>
+        {isGenerating ? '⏳ 高品質PDF生成中...' : '📄 プレミアム鑑定書をPDF出力'}
       </button>
 
-      {/* USS様式 PDF プレビュー */}
+      {/* プロフェッショナル鑑定書 */}
       <div
         ref={previewRef}
         style={{
           width: '210mm',
           minHeight: '297mm',
-          background: '#fff',
-          padding: '10mm',
+          background: 'linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)',
+          padding: '12mm',
           margin: '0 auto',
           boxSizing: 'border-box',
-          fontFamily: '"MS Gothic", "MS Mincho", monospace',
+          fontFamily: '"Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif',
           position: 'relative',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
           opacity: isGenerating ? 0.5 : 1,
-          pointerEvents: isGenerating ? 'none' : 'auto'
+          pointerEvents: isGenerating ? 'none' : 'auto',
+          border: '1px solid #e0e0e0'
         }}
       >
-        {/* ヘッダー */}
+        {/* 高級感あるヘッダー */}
         <div style={{
-          borderBottom: '4px solid #000',
-          paddingBottom: 8,
-          marginBottom: 10,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+          padding: '16px 20px',
+          marginBottom: 16,
+          borderRadius: 8,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          border: '2px solid #c9a961',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <h1 style={{
-            fontSize: 20,
-            fontWeight: 900,
-            color: '#000',
-            margin: 0,
-            letterSpacing: 2
-          }}>
-            車両検査証明書
-          </h1>
           <div style={{
-            fontSize: 10,
-            color: '#000',
-            textAlign: 'right',
-            fontWeight: 700
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: 'linear-gradient(90deg, #c9a961 0%, #f4e5c3 50%, #c9a961 100%)'
+          }}></div>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
           }}>
-            検査日: {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/')}
+            <div>
+              <h1 style={{
+                fontSize: 24,
+                fontWeight: 900,
+                color: '#c9a961',
+                margin: 0,
+                letterSpacing: 3,
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+              }}>
+                車両品質鑑定書
+              </h1>
+              <div style={{
+                fontSize: 11,
+                color: '#f4e5c3',
+                marginTop: 4,
+                letterSpacing: 1.5,
+                fontWeight: 500
+              }}>
+                VEHICLE QUALITY INSPECTION CERTIFICATE
+              </div>
+            </div>
+            <div style={{
+              textAlign: 'right'
+            }}>
+              <div style={{
+                fontSize: 10,
+                color: '#f4e5c3',
+                marginBottom: 4,
+                fontWeight: 600
+              }}>
+                検査実施日
+              </div>
+              <div style={{
+                fontSize: 14,
+                color: '#fff',
+                fontWeight: 900,
+                letterSpacing: 1
+              }}>
+                {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -188,237 +247,399 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
         <div style={{
           display: 'grid',
           gridTemplateColumns: '2fr 1fr',
-          gap: 10,
-          marginBottom: 10
+          gap: 12,
+          marginBottom: 14
         }}>
-          {/* 諸元情報 */}
+          {/* 諸元情報 - 高級デザイン */}
           <div style={{
-            border: '2px solid #000',
-            padding: 8
+            background: '#fff',
+            border: '2px solid #c9a961',
+            borderRadius: 8,
+            padding: 12,
+            boxShadow: '0 2px 8px rgba(201,169,97,0.15)'
           }}>
+            <div style={{
+              fontSize: 13,
+              fontWeight: 900,
+              color: '#1a1a2e',
+              marginBottom: 10,
+              paddingBottom: 6,
+              borderBottom: '2px solid #c9a961',
+              letterSpacing: 1
+            }}>
+              📋 車両諸元情報
+            </div>
             <table style={{
               width: '100%',
               fontSize: 11,
               borderCollapse: 'collapse',
-              fontWeight: 700
+              fontWeight: 600
             }}>
               <tbody>
                 <tr>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc', width: '30%' }}>年式</td>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>{carSpec.year || '-'}</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', width: '30%', color: '#555', background: '#f9f9f9' }}>年式</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#1a1a2e', fontWeight: 700 }}>{carSpec.year || '-'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>型式</td>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>{carSpec.model || '-'}</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#555', background: '#f9f9f9' }}>型式</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#1a1a2e', fontWeight: 700 }}>{carSpec.model || '-'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>車名</td>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>{carSpec.name || '-'}</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#555', background: '#f9f9f9' }}>車名</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#1a1a2e', fontWeight: 700 }}>{carSpec.name || '-'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>グレード</td>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>{carSpec.grade || '-'}</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#555', background: '#f9f9f9' }}>グレード</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#1a1a2e', fontWeight: 700 }}>{carSpec.grade || '-'}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>走行距離</td>
-                  <td style={{ padding: '4px 6px', borderBottom: '1px solid #ccc' }}>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#555', background: '#f9f9f9' }}>走行距離</td>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid #e8e8e8', color: '#c9a961', fontWeight: 900, fontSize: 12 }}>
                     {carSpec.mileage ? `${carSpec.mileage.toLocaleString()}km` : '-'}
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '4px 6px' }}>車体番号</td>
-                  <td style={{ padding: '4px 6px', fontSize: 10 }}>{carSpec.chassisNumber || '-'}</td>
+                  <td style={{ padding: '6px 8px', color: '#555', background: '#f9f9f9' }}>車体番号</td>
+                  <td style={{ padding: '6px 8px', color: '#1a1a2e', fontSize: 10, fontFamily: 'monospace', fontWeight: 700 }}>{carSpec.chassisNumber || '-'}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          {/* 評価点 */}
+          {/* 評価点 - プレミアムデザイン */}
           <div style={{
-            border: '2px solid #000',
-            padding: 8,
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%)',
+            border: '3px solid #c9a961',
+            borderRadius: 8,
+            padding: 12,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            background: '#f5f5f5'
+            boxShadow: '0 4px 16px rgba(201,169,97,0.25)',
+            position: 'relative',
+            overflow: 'hidden'
           }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>総合評価</div>
             <div style={{
-              fontSize: 48,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 2,
+              background: 'linear-gradient(90deg, #c9a961 0%, #f4e5c3 50%, #c9a961 100%)'
+            }}></div>
+            <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 8, color: '#f4e5c3', letterSpacing: 1 }}>総合評価</div>
+            <div style={{
+              fontSize: 56,
               fontWeight: 900,
-              color: '#c00',
-              lineHeight: 1
+              color: '#c9a961',
+              lineHeight: 1,
+              textShadow: '0 0 20px rgba(201,169,97,0.5)',
+              marginBottom: 4
             }}>
               {typeof inspectorReport === 'object' ? inspectorReport.overallRating || '-' : '-'}
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 8 }}>内装評価</div>
             <div style={{
-              fontSize: 28,
+              width: 60,
+              height: 2,
+              background: 'linear-gradient(90deg, transparent 0%, #c9a961 50%, transparent 100%)',
+              marginTop: 8,
+              marginBottom: 8
+            }}></div>
+            <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 6, color: '#f4e5c3', letterSpacing: 1 }}>内装評価</div>
+            <div style={{
+              fontSize: 32,
               fontWeight: 900,
-              color: '#000',
-              lineHeight: 1
+              color: '#fff',
+              lineHeight: 1,
+              textShadow: '0 2px 8px rgba(0,0,0,0.3)'
             }}>
               {typeof inspectorReport === 'object' ? inspectorReport.interiorRating || '-' : '-'}
             </div>
           </div>
         </div>
 
-        {/* 中段: 展開図 */}
+        {/* 中段: 展開図 - プレミアムフレーム */}
         <div style={{
-          border: '2px solid #000',
-          padding: 8,
-          marginBottom: 10,
-          minHeight: '120mm'
+          background: '#fff',
+          border: '3px solid #c9a961',
+          borderRadius: 8,
+          padding: 14,
+          marginBottom: 14,
+          minHeight: '120mm',
+          boxShadow: '0 4px 16px rgba(201,169,97,0.2)',
+          position: 'relative'
         }}>
           <div style={{
-            fontSize: 12,
-            fontWeight: 700,
-            marginBottom: 6,
-            borderBottom: '1px solid #000',
-            paddingBottom: 4
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: 'linear-gradient(90deg, #c9a961 0%, #f4e5c3 50%, #c9a961 100%)',
+            borderRadius: '8px 8px 0 0'
+          }}></div>
+          <div style={{
+            fontSize: 13,
+            fontWeight: 900,
+            marginBottom: 10,
+            paddingBottom: 8,
+            borderBottom: '2px solid #c9a961',
+            color: '#1a1a2e',
+            letterSpacing: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
           }}>
-            外装展開図
+            <span>🚗</span>
+            <span>外装状態評価図</span>
+            <span style={{ fontSize: 9, color: '#999', fontWeight: 500, marginLeft: 'auto' }}>
+              ※瑕疵箇所を詳細にマーキング
+            </span>
           </div>
           {diagramImage ? (
-            <img 
-              src={diagramImage} 
-              alt="車両展開図"
-              style={{
-                width: '100%',
-                height: 'auto',
-                maxHeight: '110mm',
-                objectFit: 'contain'
-              }}
-            />
+            <div style={{
+              background: '#f9f9f9',
+              padding: 8,
+              borderRadius: 6,
+              border: '1px solid #e8e8e8'
+            }}>
+              <img 
+                src={diagramImage} 
+                alt="車両展開図"
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '105mm',
+                  objectFit: 'contain',
+                  borderRadius: 4
+                }}
+              />
+            </div>
           ) : (
-            <div style={{ fontSize: 10, color: '#666', textAlign: 'center', paddingTop: 40 }}>
+            <div style={{
+              fontSize: 11,
+              color: '#999',
+              textAlign: 'center',
+              paddingTop: 50,
+              paddingBottom: 50,
+              background: '#f9f9f9',
+              borderRadius: 6,
+              border: '1px dashed #ccc'
+            }}>
               展開図を読み込み中...
             </div>
           )}
         </div>
 
-        {/* 下段: 車両画像 + 検査員コメント */}
+        {/* 下段: 車両画像 - ギャラリー風 */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: 10,
-          marginBottom: 10
+          gap: 12,
+          marginBottom: 14
         }}>
           {/* 車両前方画像 */}
           <div style={{
-            border: '2px solid #000',
-            padding: 6
+            background: '#fff',
+            border: '2px solid #c9a961',
+            borderRadius: 8,
+            padding: 8,
+            boxShadow: '0 2px 8px rgba(201,169,97,0.15)'
           }}>
-            <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 4, borderBottom: '1px solid #000', paddingBottom: 2 }}>
-              車両画像（前）
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              marginBottom: 6,
+              paddingBottom: 4,
+              borderBottom: '2px solid #c9a961',
+              color: '#1a1a2e',
+              letterSpacing: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}>
+              <span>📸</span>
+              <span>車両画像（前面）</span>
             </div>
             {carSpec.frontImage ? (
-              <img 
-                src={carSpec.frontImage} 
-                alt="車両前方"
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  maxHeight: '35mm',
-                  objectFit: 'cover',
-                  border: '1px solid #ccc'
-                }}
-              />
+              <div style={{
+                border: '3px solid #e8e8e8',
+                borderRadius: 6,
+                overflow: 'hidden',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+              }}>
+                <img 
+                  src={carSpec.frontImage} 
+                  alt="車両前方"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: '36mm',
+                    objectFit: 'cover',
+                    display: 'block'
+                  }}
+                />
+              </div>
             ) : (
               <div style={{
                 width: '100%',
-                height: '35mm',
-                background: '#f0f0f0',
+                height: '36mm',
+                background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: 10,
                 color: '#999',
-                border: '1px dashed #ccc'
+                border: '2px dashed #ccc',
+                borderRadius: 6
               }}>
-                画像なし
+                <div style={{ fontSize: 20, marginBottom: 4 }}>📷</div>
+                <div>画像未登録</div>
               </div>
             )}
           </div>
 
           {/* 車両後方画像 */}
           <div style={{
-            border: '2px solid #000',
-            padding: 6
+            background: '#fff',
+            border: '2px solid #c9a961',
+            borderRadius: 8,
+            padding: 8,
+            boxShadow: '0 2px 8px rgba(201,169,97,0.15)'
           }}>
-            <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 4, borderBottom: '1px solid #000', paddingBottom: 2 }}>
-              車両画像（後）
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              marginBottom: 6,
+              paddingBottom: 4,
+              borderBottom: '2px solid #c9a961',
+              color: '#1a1a2e',
+              letterSpacing: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}>
+              <span>📸</span>
+              <span>車両画像（後面）</span>
             </div>
             {carSpec.rearImage ? (
-              <img 
-                src={carSpec.rearImage} 
-                alt="車両後方"
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  maxHeight: '35mm',
-                  objectFit: 'cover',
-                  border: '1px solid #ccc'
-                }}
-              />
+              <div style={{
+                border: '3px solid #e8e8e8',
+                borderRadius: 6,
+                overflow: 'hidden',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+              }}>
+                <img 
+                  src={carSpec.rearImage} 
+                  alt="車両後方"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: '36mm',
+                    objectFit: 'cover',
+                    display: 'block'
+                  }}
+                />
+              </div>
             ) : (
               <div style={{
                 width: '100%',
-                height: '35mm',
-                background: '#f0f0f0',
+                height: '36mm',
+                background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: 10,
                 color: '#999',
-                border: '1px dashed #ccc'
+                border: '2px dashed #ccc',
+                borderRadius: 6
               }}>
-                画像なし
+                <div style={{ fontSize: 20, marginBottom: 4 }}>📷</div>
+                <div>画像未登録</div>
               </div>
             )}
           </div>
         </div>
 
-        {/* 検査員報告 */}
+        {/* 検査員報告 - プロフェッショナル */}
         <div style={{
-          border: '2px solid #000',
-          padding: 8,
-          minHeight: '30mm'
+          background: '#fff',
+          border: '2px solid #c9a961',
+          borderRadius: 8,
+          padding: 12,
+          minHeight: '28mm',
+          boxShadow: '0 2px 8px rgba(201,169,97,0.15)',
+          marginBottom: 8
         }}>
           <div style={{
-            fontSize: 11,
-            fontWeight: 700,
-            marginBottom: 6,
-            borderBottom: '1px solid #000',
-            paddingBottom: 4
+            fontSize: 12,
+            fontWeight: 900,
+            marginBottom: 8,
+            paddingBottom: 6,
+            borderBottom: '2px solid #c9a961',
+            color: '#1a1a2e',
+            letterSpacing: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
           }}>
-            検査員報告・備考
+            <span>✍️</span>
+            <span>検査員報告・特記事項</span>
           </div>
           <div style={{
-            fontSize: 9,
-            lineHeight: 1.5,
+            fontSize: 10,
+            lineHeight: 1.7,
             whiteSpace: 'pre-wrap',
-            fontFamily: 'monospace'
+            color: '#2a2a2a',
+            background: '#f9f9f9',
+            padding: 10,
+            borderRadius: 6,
+            border: '1px solid #e8e8e8',
+            minHeight: '18mm',
+            fontWeight: 500
           }}>
             {typeof inspectorReport === 'string' ? inspectorReport : inspectorReport.content || '特記事項なし'}
           </div>
         </div>
 
-        {/* フッター */}
+        {/* プレミアムフッター */}
         <div style={{
           position: 'absolute',
-          bottom: '8mm',
-          left: '10mm',
-          right: '10mm',
-          borderTop: '1px solid #000',
-          paddingTop: 4,
-          fontSize: 8,
-          color: '#000',
-          textAlign: 'center',
-          fontWeight: 700
+          bottom: '10mm',
+          left: '12mm',
+          right: '12mm',
+          paddingTop: 10,
+          borderTop: '3px solid #c9a961',
+          background: 'linear-gradient(to top, rgba(201,169,97,0.05) 0%, transparent 100%)'
         }}>
-          この検査証明書は検査時点での車両状態を証明するものです。｜発行: {new Date().toLocaleDateString('ja-JP')}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: 8,
+            color: '#666',
+            fontWeight: 600,
+            marginBottom: 6
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ color: '#c9a961', fontSize: 10 }}>✓</span>
+              <span>本鑑定書は検査時点での車両品質を証明します</span>
+            </div>
+            <div style={{ color: '#1a1a2e', fontWeight: 700 }}>
+              発行日: {new Date().toLocaleDateString('ja-JP')}
+            </div>
+          </div>
+          <div style={{
+            fontSize: 7,
+            color: '#999',
+            textAlign: 'center',
+            letterSpacing: 0.5
+          }}>
+            PROFESSIONAL VEHICLE QUALITY INSPECTION CERTIFICATE | ISSUED BY CERTIFIED INSPECTOR
+          </div>
         </div>
       </div>
     </div>
