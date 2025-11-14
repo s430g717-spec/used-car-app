@@ -41,10 +41,16 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
   }, [partDefects, isGenerating]);
 
   const generatePDF = async () => {
-    if (!previewRef.current) return;
+    if (!previewRef.current) {
+      alert('プレビューエリアが見つかりません');
+      return;
+    }
     
     setIsGenerating(true);
     try {
+      // 少し待機してレンダリングを確実にする
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       // A4サイズ (210mm x 297mm)
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = 210;
@@ -54,7 +60,11 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
       const canvas = await html2canvas(previewRef.current, {
         scale: 2,
         useCORS: true,
-        logging: false
+        allowTaint: true,
+        logging: true,
+        backgroundColor: '#ffffff',
+        windowWidth: previewRef.current.scrollWidth,
+        windowHeight: previewRef.current.scrollHeight
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -69,9 +79,10 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
       pdf.save(fileName);
       
       if (onExport) onExport();
+      alert('PDFを保存しました');
     } catch (error) {
       console.error('PDF生成エラー:', error);
-      alert('PDF生成に失敗しました');
+      alert(`PDF生成に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsGenerating(false);
     }
@@ -139,8 +150,10 @@ export function PDFExport({ carSpec, partDefects, inspectorReport, onExport }: P
           margin: '0 auto',
           boxSizing: 'border-box',
           fontFamily: '"MS Gothic", "MS Mincho", monospace',
-          display: isGenerating ? 'block' : 'none',
-          position: 'relative'
+          position: 'relative',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          opacity: isGenerating ? 0.5 : 1,
+          pointerEvents: isGenerating ? 'none' : 'auto'
         }}
       >
         {/* ヘッダー */}
