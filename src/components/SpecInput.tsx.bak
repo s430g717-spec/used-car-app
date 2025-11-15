@@ -1,4 +1,75 @@
 ﻿import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginPage } from './components/LoginPage';
+import { UserType } from './types/user';
+import CarDiagram from './components/CarDiagram';
+
+// 公認鑑定士用ダッシュボード（仮）
+const CertifiedAppraiserDashboard: React.FC = () => {
+  const { logout, userData } = useAuth();
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <h2>公認鑑定士ダッシュボード</h2>
+        <div>
+          <span style={{ marginRight: '16px' }}>鑑定士: {userData?.name}</span>
+          <button onClick={logout} style={{ padding: '8px 16px' }}>ログアウト</button>
+        </div>
+      </div>
+      <p>認定依頼の一覧や、認定済み鑑定書の管理などをここに表示します。</p>
+    </div>
+  );
+};
+
+// 店舗ユーザー用ダッシュボード
+const StoreDashboard: React.FC = () => {
+  const { logout, userData } = useAuth();
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <h2>店舗ダッシュボード</h2>
+        <div>
+          <span style={{ marginRight: '16px' }}>{userData?.name} ({userData?.storeId})</span>
+          <button onClick={logout} style={{ padding: '8px 16px' }}>ログアウト</button>
+        </div>
+      </div>
+      <CarDiagram />
+    </div>
+  );
+};
+
+// メインコンポーネント
+const AppContent: React.FC = () => {
+  const { currentUser, userType, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh'
+      }}>
+        <p>読み込み中...</p>
+      </div>
+    );
+  }
+
+  // 未ログイン
+  if (!currentUser) {
+    return <LoginPage />;
+  }
+
+  // 公認鑑定士
+  if (userType === UserType.CERTIFIED_APPRAISER) {
+    return <CertifiedAppraiserDashboard />;
+  }
+
+  // 店舗ユーザー・管理者
+  return <StoreDashboard />;
+};
 
 export interface CarSpec {
   year: string;
@@ -264,5 +335,14 @@ export function SpecInput() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ルートコンポーネント
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

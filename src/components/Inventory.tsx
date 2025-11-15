@@ -1,24 +1,61 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, orderBy, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { useAuth } from '../context/AuthContext';
 import { CarSpec } from './SpecInput';
 import { InspectorReportData } from './InspectorReport';
 import { PartDefect } from '../CarPartSelector';
 
 interface InventoryItem {
   id: string;
+  storeId: string;
+  createdBy: string;
+  createdAt: string;
   carSpec: CarSpec;
   inspectorReport: InspectorReportData;
   defects: PartDefect[];
-  createdAt: string;
+  certificationStatus: 'NONE' | 'REQUESTED' | 'CERTIFIED';
+  certifiedBy: string | null;
 }
 
 export function Inventory() {
-  const [items, setItems] = useState<InventoryItem[]>(() => {
-    const saved = localStorage.getItem('inventory');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { currentUser, userData } = useAuth();
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDefects, setFilterDefects] = useState<'all' | 'none' | 'some'>('all');
+  const [loading, setLoading] = useState(true);
+
+  // Firestoreからデータを取得（useEffectの外に移動）
+  const fetchItems = async () => {
+    if (!userData?.storeId) {
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const q = query(
+        collection(db, 'appraisals'),
+        where('storeId', '==', userData.storeId),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const fetchedItems = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as InventoryItem[];
+      setItems(fetchedItems);
+    } catch (error) {
+      console.error('データ取得エラー:', error);
+      alert('データの取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, [userData?.storeId]);
 
   // フィルタリングされたアイテム
   const filteredItems = React.useMemo(() => {
@@ -45,7 +82,13 @@ export function Inventory() {
     });
   }, [items, searchQuery, filterDefects]);
 
-  const addCurrentToInventory = () => {
+  // Firestoreに保存
+  const addCurrentToInventory = async () => {
+    if (!currentUser || !userData?.storeId) {
+      alert('ログインが必要です');
+      return;
+    }
+
     const spec = localStorage.getItem('carSpec');
     const report = localStorage.getItem('inspectorReport');
     const defectsData = localStorage.getItem('partDefects');
@@ -55,28 +98,45 @@ export function Inventory() {
       return;
     }
 
-    const newItem: InventoryItem = {
-      id: Date.now().toString(),
-      carSpec: spec ? JSON.parse(spec) : { year: '', model: '', name: '', chassisNumber: '' },
-      inspectorReport: report ? JSON.parse(report) : {},
-      defects: defectsData ? JSON.parse(defectsData) : [],
-      createdAt: new Date().toISOString()
-    };
+    try {
+      const newItem = {
+        storeId: userData.storeId,
+        createdBy: currentUser.uid,
+        createdAt: new Date().toISOString(),
+        carSpec: spec ? JSON.parse(spec) : { year: '', model: '', name: '', chassisNumber: '', mileage: '' },
+        inspectorReport: report ? JSON.parse(report) : {},
+        defects: defectsData ? JSON.parse(defectsData) : [],
+        certificationStatus: 'NONE' as const,
+        certifiedBy: null
+      };
 
-    const updatedItems = [newItem, ...items];
-    setItems(updatedItems);
-    localStorage.setItem('inventory', JSON.stringify(updatedItems));
-    
-    // 全データをクリアして新規状態に戻す
-    localStorage.removeItem('carSpec');
-    localStorage.removeItem('inspectorReport');
-    localStorage.removeItem('partDefects');
-    localStorage.removeItem('diagramImage');
-    
-    // 各コンポーネントに更新を通知
-    window.dispatchEvent(new Event('storage'));
-    
-    alert('在庫に追加しました。入力データをクリアしました。');
+      await addDoc(collection(db, 'appraisals'), newItem);
+      
+      // LocalStorageをクリア
+      localStorage.removeItem('carSpec');
+      localStorage.removeItem('inspectorReport');
+      localStorage.removeItem('partDefects');
+      localStorage.removeItem('diagramImage');
+      
+      // リストを再取得
+      const q = query(
+        collection(db, 'appraisals'),
+        where('storeId', '==', userData.storeId),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const updatedItems = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as InventoryItem[];
+      setItems(updatedItems);
+      
+      window.dispatchEvent(new Event('storage'));
+      alert('Firestoreに保存しました！');
+    } catch (error) {
+      console.error('保存エラー:', error);
+      alert('保存に失敗しました');
+    }
   };
 
   const generatePDF = async (item: InventoryItem) => {
@@ -100,18 +160,50 @@ export function Inventory() {
     }
   };
 
-  const deleteItem = (item: InventoryItem) => {
+  const deleteItem = async (item: InventoryItem) => {
     if (confirm(`${item.carSpec.name || '車両'}（末尾${item.carSpec.chassisNumber?.slice(-4) || '-'}）を削除しますか？`)) {
-      const updatedItems = items.filter(i => i.id !== item.id);
-      setItems(updatedItems);
-      localStorage.setItem('inventory', JSON.stringify(updatedItems));
-      alert('削除しました');
+      try {
+        await deleteDoc(doc(db, 'appraisals', item.id));
+        setItems(items.filter(i => i.id !== item.id));
+        alert('削除しました');
+      } catch (error) {
+        console.error('削除エラー:', error);
+        alert('削除に失敗しました');
+      }
+    }
+  };
+
+  const requestCertification = async (item: InventoryItem) => {
+    if (!confirm(`${item.carSpec.name} の認定を依頼しますか？`)) {
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, 'appraisals', item.id), {
+        certificationStatus: 'REQUESTED',
+        requestedAt: new Date().toISOString()
+      });
+
+      alert('認定を依頼しました');
+      // リストを再取得
+      fetchItems();
+    } catch (error) {
+      console.error('依頼エラー:', error);
+      alert('認定依頼に失敗しました');
     }
   };
 
   const closePreview = () => {
     setSelectedItem(null);
   };
+
+  if (loading) {
+    return (
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: 20, textAlign: 'center' }}>
+        <p>読み込み中...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
@@ -142,7 +234,7 @@ export function Inventory() {
             boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
           }}
         >
-          ➕ 現在のデータを在庫に追加
+          ➕ 現在のデータをFirestoreに保存
         </button>
 
         {items.length === 0 ? (
@@ -156,7 +248,7 @@ export function Inventory() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {items.map(item => (
+            {filteredItems.map(item => (
               <div
                 key={item.id}
                 style={{
@@ -214,7 +306,7 @@ export function Inventory() {
                       onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                       onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      📄 鑑定書PDF
+                      📄 PDF
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); editItem(item); }}
@@ -252,8 +344,29 @@ export function Inventory() {
                       onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                       onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      �️ 削除
+                      🗑️ 削除
                     </button>
+                    {item.certificationStatus === 'NONE' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); requestCertification(item); }}
+                        style={{
+                          padding: '10px 18px',
+                          borderRadius: 8,
+                          border: 'none',
+                          background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
+                          color: '#fff',
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(56,189,248,0.3)',
+                          transition: 'transform 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        ✔️ 認定依頼
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
