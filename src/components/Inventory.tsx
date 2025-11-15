@@ -84,14 +84,39 @@ export function Inventory() {
 
   // Firestoreに保存
   const addCurrentToInventory = async () => {
-    if (!currentUser || !userData?.storeId) {
-      alert('ログインが必要です');
+    const debugInfo = `
+【デバッグ情報】
+currentUser: ${currentUser ? 'あり (UID: ' + currentUser.uid + ')' : 'なし'}
+userData: ${userData ? 'あり' : 'なし'}
+userData.storeId: ${userData?.storeId || 'なし'}
+userData.name: ${userData?.name || 'なし'}
+userData.userType: ${userData?.userType || 'なし'}
+    `;
+    
+    alert(debugInfo);
+    
+    if (!currentUser) {
+      alert('ログインしていません。ページを再読み込みしてください。');
+      return;
+    }
+    
+    if (!userData) {
+      alert('ユーザー情報を読み込み中です。数秒待ってから再度お試しください。');
+      return;
+    }
+    
+    if (!userData.storeId) {
+      alert(`店舗IDが設定されていません。\n\nユーザー情報: ${JSON.stringify(userData, null, 2)}\n\n管理者に連絡してください。`);
       return;
     }
 
     const spec = localStorage.getItem('carSpec');
     const report = localStorage.getItem('inspectorReport');
     const defectsData = localStorage.getItem('partDefects');
+
+    console.log('LocalStorage carSpec:', spec);
+    console.log('LocalStorage inspectorReport:', report);
+    console.log('LocalStorage partDefects:', defectsData);
 
     if (!spec && !report && !defectsData) {
       alert('登録するデータがありません');
@@ -110,7 +135,11 @@ export function Inventory() {
         certifiedBy: null
       };
 
+      console.log('保存するデータ:', newItem);
+
       await addDoc(collection(db, 'appraisals'), newItem);
+      
+      console.log('Firestore保存成功');
       
       // LocalStorageをクリア
       localStorage.removeItem('carSpec');
@@ -119,23 +148,13 @@ export function Inventory() {
       localStorage.removeItem('diagramImage');
       
       // リストを再取得
-      const q = query(
-        collection(db, 'appraisals'),
-        where('storeId', '==', userData.storeId),
-        orderBy('createdAt', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
-      const updatedItems = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as InventoryItem[];
-      setItems(updatedItems);
+      await fetchItems();
       
       window.dispatchEvent(new Event('storage'));
       alert('Firestoreに保存しました！');
     } catch (error) {
       console.error('保存エラー:', error);
-      alert('保存に失敗しました');
+      alert(`保存に失敗しました: ${error}`);
     }
   };
 
