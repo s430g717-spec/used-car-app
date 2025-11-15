@@ -84,16 +84,7 @@ export function Inventory() {
 
   // Firestoreに保存
   const addCurrentToInventory = async () => {
-    const debugInfo = `
-【デバッグ情報】
-currentUser: ${currentUser ? 'あり (UID: ' + currentUser.uid + ')' : 'なし'}
-userData: ${userData ? 'あり' : 'なし'}
-userData.storeId: ${userData?.storeId || 'なし'}
-userData.name: ${userData?.name || 'なし'}
-userData.userType: ${userData?.userType || 'なし'}
-    `;
-    
-    alert(debugInfo);
+    // デバッグalertを削除
     
     if (!currentUser) {
       alert('ログインしていません。ページを再読み込みしてください。');
@@ -106,7 +97,7 @@ userData.userType: ${userData?.userType || 'なし'}
     }
     
     if (!userData.storeId) {
-      alert(`店舗IDが設定されていません。\n\nユーザー情報: ${JSON.stringify(userData, null, 2)}\n\n管理者に連絡してください。`);
+      alert(`店舗IDが設定されていません。管理者に連絡してください。`);
       return;
     }
 
@@ -180,7 +171,9 @@ userData.userType: ${userData?.userType || 'なし'}
   };
 
   const deleteItem = async (item: InventoryItem) => {
-    if (confirm(`${item.carSpec.name || '車両'}（末尾${item.carSpec.chassisNumber?.slice(-4) || '-'}）を削除しますか？`)) {
+    // 変更前: 末尾${item.carSpec.chassisNumber?.slice(-4) || '-'}
+    // 変更後: ${item.carSpec.chassisNumber?.slice(-4) || '-'}
+    if (confirm(`${item.carSpec.name || '車両'}（${item.carSpec.chassisNumber?.slice(-4) || '-'}）を削除しますか？`)) {
       try {
         await deleteDoc(doc(db, 'appraisals', item.id));
         setItems(items.filter(i => i.id !== item.id));
@@ -293,7 +286,7 @@ userData.userType: ${userData?.userType || 'なし'}
                       {item.carSpec.name || '-'} 
                       <span style={{ fontSize: 14, fontWeight: 600, color: '#64748b', marginLeft: 12 }}>
                         {item.carSpec.chassisNumber 
-                          ? `末尾 ${item.carSpec.chassisNumber.slice(-4)}` 
+                          ? item.carSpec.chassisNumber.slice(-4)
                           : '-'}
                       </span>
                     </div>

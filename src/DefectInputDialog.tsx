@@ -1,4 +1,5 @@
-﻿import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+// jsQRなどのQRデコードライブラリを使う場合はimport
 
 export interface Defect {
   type: string;
@@ -6,12 +7,44 @@ export interface Defect {
   note?: string;
 }
 
-const DEFECT_TYPES = [
+export interface CarSpec {
+  year: string;
+  model: string;
+  name: string;
+  mileage: string;
+  [key: string]: string;
+}
+
+// USS_DEFECT_TYPESの変更: Sを削除、YのレベルにS1,S2を統合
+const USS_DEFECT_TYPES = [
   { code: 'A', label: 'キズ' },
   { code: 'U', label: '凹み' },
-  { code: 'B', label: 'キズ凹' },
   { code: 'W', label: '補修' },
-  { code: '✖✖', label: '交換' }
+  { code: '✖✖', label: '交換' },
+  { code: 'B', label: 'キズ凹' },
+  { code: 'C', label: '腐食' },
+  { code: 'Y', label: 'その他' }, // 「割れ」→「その他」に変更
+  { code: 'G', label: '飛び石' },
+  { code: '✖', label: 'ヒビ' },
+];
+
+const LEVEL_LABELS = {
+  'A': ['A', 'A1', 'A2', 'A3'],
+  'U': ['U', 'U1', 'U2', 'U3'],
+  'B': ['B', 'B1', 'B2', 'B3'],
+  'C': ['C', 'C1', 'C2', 'C3'],
+  'Y': ['Y', 'Y1', 'Y2', 'Y3', 'S1', 'S2'], // S1,S2を追加
+  'G': ['G'],
+  '✖': ['✖'],
+};
+
+const HOTSPOTS = [
+  {
+    name: 'Fドア',
+    d: 'M10,20 L50,20 L50,60 L10,60 Z', // ←Figma等から取得したパス
+    labelPos: { x: 30, y: 40 }
+  },
+  // ...他の部位
 ];
 
 export function DefectInputDialog(props: {
@@ -22,476 +55,341 @@ export function DefectInputDialog(props: {
   onConfirm: (defects: Defect[]) => void;
 }) {
   const { open, onOpenChange, partName, existingDefects, onConfirm } = props;
-  const [activeType, setActiveType] = React.useState<string | null>(null);
-  const touchStartPos = useRef<{ x: number; y: number; code: string } | null>(null);
+  const [selectingType, setSelectingType] = useState(true);
+  const [type, setType] = useState('A');
+
+  // フリック用
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+
+  useEffect(() => {
+    setSelectingType(true);
+  }, [existingDefects, open]);
 
   if (!open) return null;
 
+  // 追加時に即onConfirmして閉じる
   const quickAdd = (defect: Defect) => {
-    // 同じタイプ+レベルの組み合わせがあれば上書き（削除してから追加）
-    const filteredDefects = existingDefects.filter(d => 
-      !(d.type === defect.type && (d.level || '') === (defect.level || ''))
-    );
-
-    // 上書き後に2つを超える場合はエラー
-    if (filteredDefects.length >= 2) {
-      alert('1つの部位には2つまでしか登録できません');
-      return;
-    }
-
-    // 新しい瑕疵を追加
-    onConfirm([...filteredDefects, defect]);
-    
-    // 2つになったら自動的に閉じる
-    if (filteredDefects.length === 1) {
-      onOpenChange(false);
-    }
+    onConfirm([defect]);
+    onOpenChange(false);
   };
 
-  const removeDefect = (index: number) => {
-    const updatedDefects = existingDefects.filter((_, i) => i !== index);
-    onConfirm(updatedDefects);
+  // タイプ選択→フリック待ちUIへ
+  const handleTypeSelect = (code: string) => {
+    setType(code);
+    setSelectingType(false);
   };
 
-  const handleTouchStart = (e: React.TouchEvent, code: string) => {
-    e.preventDefault();
-    setActiveType(code);
-    touchStartPos.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY,
-      code
-    };
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartPos.current) return;
-
-    const endX = e.changedTouches[0].clientX;
-    const endY = e.changedTouches[0].clientY;
-    const deltaX = endX - touchStartPos.current.x;
-    const deltaY = endY - touchStartPos.current.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-    const code = touchStartPos.current.code;
-    
-    // レベルなしの瑕疵（G、S1、S2、交換）
-    if (code === 'G' || code === 'S1' || code === 'S2' || code === '✖✖') {
-      quickAdd({ type: code });
-      touchStartPos.current = null;
-      setActiveType(null);
-      return;
-    }
-    
-    // ヒビのレベル選択（上=割れ、下=リペア）
-    if (code === 'ヒビ') {
-      if (distance < 40) {
-        quickAdd({ type: code });
-      } else {
-        const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
-        let level = '';
-        
-        if (angle >= -120 && angle < -60) {
-          level = '割れ';
-        } else if (angle >= 60 && angle < 120) {
-          level = 'リペア';
-        } else {
-          quickAdd({ type: code });
-          touchStartPos.current = null;
-          setActiveType(null);
-          return;
-        }
-        
-        quickAdd({ type: code, level });
-      }
-      touchStartPos.current = null;
-      setActiveType(null);
-      return;
-    }
-    
-    // 通常の瑕疵（レベル1-3）
-    if (distance < 40) {
-      quickAdd({ type: code });
-    } else {
-      const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
-      let level = '';
-      
-      if (angle >= -60 && angle < 60) {
-        level = '2';
-      } else if (angle >= 60 && angle < 120) {
-        level = '3';
-      } else if (angle >= -120 && angle < -60) {
-        level = '1';
-      } else {
-        level = '2';
-      }
-      
-      quickAdd({ type: code, level });
-    }
-
-    touchStartPos.current = null;
-    setActiveType(null);
-  };
-
-  const handleClick = (code: string) => {
+  // タイプボタンのダブルタップで即追加
+  const handleTypeTap = (code: string) => {
     quickAdd({ type: code });
   };
 
-  // Fガラス専用の瑕疵タイプ
-  const isGlass = partName === 'Fガラス';
-  
-  const defectTypes = isGlass ? [
-    { code: 'G', label: '飛石', hasLevel: false },
-    { code: 'ヒビ', label: 'ヒビ', hasLevel: true, levels: ['割れ', 'リペア'] }
-  ] : [
-    { code: 'A', label: 'キズ', hasLevel: true },
-    { code: 'U', label: '凹み', hasLevel: true },
-    { code: 'B', label: 'キズ凹', hasLevel: true },
-    { code: 'W', label: '補修', hasLevel: true },
-    { code: 'S1', label: 'サビ小', hasLevel: false },
-    { code: 'S2', label: 'サビ大', hasLevel: false },
-    { code: '✖✖', label: '交換', hasLevel: false }
-  ];
+  // フリックでレベル/調整痕
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (startX.current === null || startY.current === null) return;
+    const dx = e.changedTouches[0].clientX - startX.current;
+    const dy = e.changedTouches[0].clientY - startY.current;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
 
+    if (type === '✖✖') {
+      if (absY > absX && dy < -30) {
+        quickAdd({ type: '✖✖', note: '調整痕' });
+      }
+      startX.current = null;
+      startY.current = null;
+      return;
+    }
+
+    if (LEVEL_LABELS[type]) {
+      let levelIdx = 0;
+      if (absY > absX && dy < -30) levelIdx = 1; // 上
+      else if (absX > absY && dx < -30) levelIdx = 2; // 左
+      else if (absX > absY && dx > 30) levelIdx = 2; // 右
+      else if (absY > absX && dy > 30) levelIdx = 3; // 下
+
+      // Uのタップ（levelIdx===0）はEにする
+      if (type === 'U' && levelIdx === 0) {
+        quickAdd({ type: 'E' });
+      } else {
+        const label = LEVEL_LABELS[type][levelIdx] || type;
+        quickAdd({ type, level: label.replace(type, '') });
+      }
+    }
+    startX.current = null;
+    startY.current = null;
+  };
+
+  // Fガラスなら専用選択肢
+  const defectTypes = partName === 'Fガラス'
+    ? [
+        { code: 'G', label: '飛び石A' },
+        { code: '✖', label: 'ヒビ' },
+        { code: 'Y', label: '割れ' },
+      ]
+    : USS_DEFECT_TYPES;
+
+  // シンプルなUI
   return (
     <div
       style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        padding: 16,
-        pointerEvents: 'none'
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', zIndex: 9999
       }}
+      onClick={() => onOpenChange(false)}
     >
       <div
-        style={{
-          background: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: 16,
-          padding: 24,
-          maxWidth: 400,
-          width: '100%',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-          pointerEvents: 'all',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          WebkitTouchCallout: 'none'
-        }}
-        onClick={(e) => e.stopPropagation()}
+        style={{ width: 320, background: '#fff', borderRadius: 8, padding: 16 }}
+        onClick={e => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <h3 style={{
-            fontSize: 20,
-            fontWeight: 700,
-            margin: 0,
-            color: '#1e293b'
-          }}>
-            {partName}
-          </h3>
-          <button
-            onClick={() => onOpenChange(false)}
-            style={{
-              padding: '6px 12px',
-              borderRadius: 6,
-              border: '2px solid #e2e8f0',
-              background: '#fff',
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#64748b',
-              cursor: 'pointer'
-            }}
-          >
-            ✕ 閉じる
-          </button>
-        </div>
-
-        <p style={{
-          fontSize: 13,
-          color: '#64748b',
-          textAlign: 'center',
-          marginBottom: 20
-        }}>
-          瑕疵を選択してください（2つまで）
-        </p>
-
-        {existingDefects.length > 0 && (
-          <div style={{
-            marginBottom: 16,
-            padding: 12,
-            background: '#fef3c7',
-            borderRadius: 8
-          }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#92400e', marginBottom: 8 }}>
-              登録済み: {existingDefects.length}/2 （タップで削除）
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {existingDefects.map((d, i) => (
-                <button
-                  key={i}
-                  onClick={() => removeDefect(i)}
-                  style={{
-                    padding: '6px 12px',
-                    background: '#fff',
-                    border: '2px solid #fbbf24',
-                    borderRadius: 6,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: '#92400e',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    userSelect: 'none',
-                    WebkitUserSelect: 'none',
-                    WebkitTouchCallout: 'none'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#fee2e2';
-                    e.currentTarget.style.borderColor = '#dc2626';
-                    e.currentTarget.style.color = '#991b1b';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#fff';
-                    e.currentTarget.style.borderColor = '#fbbf24';
-                    e.currentTarget.style.color = '#92400e';
-                  }}
-                  onTouchStart={(e) => {
-                    e.currentTarget.style.background = '#fee2e2';
-                    e.currentTarget.style.borderColor = '#dc2626';
-                    e.currentTarget.style.color = '#991b1b';
-                  }}
-                >
-                  {d.type}{d.level || ''} ✕
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* その他の瑕疵（クイック入力） */}
-        {!isGlass && (
-          <div style={{
-            background: '#fef3c7',
-            borderRadius: 12,
-            padding: 12,
-            marginBottom: 16,
-            border: '2px solid #fbbf24'
-          }}>
-            <div style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#92400e',
-              marginBottom: 8,
-              textAlign: 'center'
-            }}>
-              ⚡ その他の瑕疵
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 6
-            }}>
-              {['Y1', 'Y2', 'C1', 'C2'].map(quick => {
-                const type = quick[0];
-                const level = quick.slice(1);
-                return (
-                  <button
-                    key={quick}
-                    onClick={() => quickAdd({ type, level })}
-                    style={{
-                      padding: '8px 4px',
-                      background: '#fff',
-                      border: '2px solid #f59e0b',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: '#92400e',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                    onTouchStart={(e) => {
-                      e.currentTarget.style.transform = 'scale(0.95)';
-                      e.currentTarget.style.background = '#fef3c7';
-                    }}
-                    onTouchEnd={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.background = '#fff';
-                    }}
-                  >
-                    {quick}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* メイン瑕疵（フリック入力説明を常に表示） */}
-        <div style={{
-          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-          borderRadius: 12,
-          padding: 12,
-          marginBottom: 12,
-          border: '2px solid #3b82f6'
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#1e40af', marginBottom: 6, textAlign: 'center' }}>
-            📱 フリック入力
-          </div>
-          <div style={{ fontSize: 12, color: '#1e40af', lineHeight: 1.5, textAlign: 'center' }}>
-            タップ=レベルなし<br/>
-            ↑フリック=レベル1 / →フリック=レベル2 / ↓フリック=レベル3
-          </div>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 12,
-          marginBottom: 20
-        }}>
-          {defectTypes.map(type => (
-            <div key={type.code} style={{ position: 'relative' }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{partName}</div>
+        {selectingType ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {defectTypes.map(opt => (
               <button
-                onTouchStart={(e) => handleTouchStart(e, type.code)}
-                onTouchEnd={handleTouchEnd}
-                onClick={() => handleClick(type.code)}
+                key={opt.code}
+                onClick={() => { setType(opt.code); setSelectingType(false); }}
                 style={{
-                  width: '100%',
-                  padding: '24px 12px',
-                  borderRadius: 12,
-                  border: activeType === type.code ? '3px solid #3b82f6' : '2px solid #e2e8f0',
-                  background: activeType === type.code 
-                    ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
-                    : existingDefects.some(d => d.type === type.code) 
-                    ? '#fef3c7' 
-                    : '#fff',
-                  fontSize: 20,
-                  fontWeight: 800,
-                  color: '#1e293b',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  touchAction: 'none',
-                  userSelect: 'none',
-                  boxShadow: activeType === type.code ? '0 4px 12px rgba(59,130,246,0.3)' : 'none'
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: '1.5px solid #2563eb',
+                  background: '#e0e7ff',
+                  fontWeight: 700,
+                  fontSize: 18,
+                  cursor: 'pointer'
                 }}
               >
-                <div>{type.code}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginTop: 4 }}>
-                  {type.label}
-                </div>
+                {opt.code}
               </button>
-              
-              {activeType === type.code && (
-                <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  pointerEvents: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 9999
-                }}>
-                  {type.code === 'ヒビ' ? (
-                    <>
-                      <div style={{
-                        position: 'absolute',
-                        top: -45,
-                        fontSize: 22,
-                        fontWeight: 900,
-                        color: '#3b82f6',
-                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.98)',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        border: '3px solid #3b82f6',
-                        zIndex: 10000,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}>↑割れ</div>
-                      <div style={{
-                        position: 'absolute',
-                        bottom: -45,
-                        fontSize: 22,
-                        fontWeight: 900,
-                        color: '#3b82f6',
-                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.98)',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        border: '3px solid #3b82f6',
-                        zIndex: 10000,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}>↓リペア</div>
-                    </>
-                  ) : type.code !== 'G' && type.code !== 'S1' && type.code !== 'S2' && type.code !== '✖✖' && (
-                    <>
-                      <div style={{
-                        position: 'absolute',
-                        top: -45,
-                        fontSize: 26,
-                        fontWeight: 900,
-                        color: '#3b82f6',
-                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.98)',
-                        padding: '8px 16px',
-                        borderRadius: '10px',
-                        border: '3px solid #3b82f6',
-                        zIndex: 10000,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}>↑1</div>
-                      <div style={{
-                        position: 'absolute',
-                        right: -45,
-                        fontSize: 26,
-                        fontWeight: 900,
-                        color: '#3b82f6',
-                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.98)',
-                        padding: '8px 16px',
-                        borderRadius: '10px',
-                        border: '3px solid #3b82f6',
-                        zIndex: 10000,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}>→2</div>
-                      <div style={{
-                        position: 'absolute',
-                        bottom: -45,
-                        fontSize: 26,
-                        fontWeight: 900,
-                        color: '#3b82f6',
-                        textShadow: '0 0 6px #fff, 0 0 10px #fff, 0 2px 4px rgba(0,0,0,0.3)',
-                        background: 'rgba(255,255,255,0.98)',
-                        padding: '8px 16px',
-                        borderRadius: '10px',
-                        border: '3px solid #3b82f6',
-                        zIndex: 10000,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}>↓3</div>
-                    </>
-                  )}
-                </div>
-              )}
+            ))}
+          </div>
+        ) : (
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                fontSize: 32,
+                fontWeight: 700,
+                userSelect: 'none',
+                background: '#f1f5f9',
+                borderRadius: 12,
+                padding: '18px 0',
+                margin: '12px 0',
+                touchAction: 'pan-x pan-y'
+              }}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onClick={() => {
+                if (type === 'U') quickAdd({ type: 'E' });
+                else quickAdd({ type });
+              }}
+            >
+              {type}
             </div>
-          ))}
-        </div>
-
-        <button
-          onClick={() => onOpenChange(false)}
-          style={{
-            width: '100%',
-            padding: 14,
-            borderRadius: 8,
-            border: 'none',
-            background: '#e2e8f0',
-            fontSize: 16,
-            fontWeight: 600,
-            color: '#475569',
-            cursor: 'pointer'
-          }}
-        >
-          閉じる
-        </button>
+            <button onClick={() => setSelectingType(true)} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', background: '#f8fafc' }}>戻る</button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+// QRコード画像アップロード＆デコード
+export function SpecInputSheet(props: {
+  value: CarSpec;
+  onChange: (v: CarSpec) => void;
+}) {
+  const { value, onChange } = props;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // QRコード画像アップロード＆デコード
+  const handleQRUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+      // jsQR等でQRデコード
+      // const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      // const qr = jsQR(imageData.data, canvas.width, canvas.height);
+      // if (qr) {
+      //   const parsed = parseShakenQR(qr.data); // 独自パース関数
+      //   onChange({ ...value, ...parsed });
+      // }
+      // 仮：デモ用
+      onChange({
+        ...value,
+        year: "2021",
+        model: "DBA-ABC123",
+        name: "カローラ",
+        mileage: "12345"
+      });
+    };
+  };
+
+  // 入力変更
+  const handleInput = (key: keyof CarSpec, v: string) => {
+    onChange({ ...value, [key]: v });
+  };
+
+  return (
+    <div style={{
+      padding: 12,
+      background: "#f8fafc",
+      borderRadius: 8,
+      maxWidth: 400,
+      width: "100%",
+      boxSizing: "border-box"
+    }}>
+      <h4 style={{ fontSize: 18, margin: "8px 0" }}>諸元入力</h4>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ fontSize: 15 }}>年式</label>
+        <input
+          value={value.year || ""}
+          onChange={e => handleInput("year", e.target.value)}
+          style={{
+            width: "100%",
+            fontSize: 16,
+            padding: "10px 8px",
+            marginTop: 2,
+            borderRadius: 6,
+            border: "1px solid #ccc"
+          }}
+        />
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ fontSize: 15 }}>型式</label>
+        <input
+          value={value.model || ""}
+          onChange={e => handleInput("model", e.target.value)}
+          style={{
+            width: "100%",
+            fontSize: 16,
+            padding: "10px 8px",
+            marginTop: 2,
+            borderRadius: 6,
+            border: "1px solid #ccc"
+          }}
+        />
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ fontSize: 15 }}>車名</label>
+        <input
+          value={value.name || ""}
+          onChange={e => handleInput("name", e.target.value)}
+          style={{
+            width: "100%",
+            fontSize: 16,
+            padding: "10px 8px",
+            marginTop: 2,
+            borderRadius: 6,
+            border: "1px solid #ccc"
+          }}
+        />
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ fontSize: 15 }}>走行距離</label>
+        <input
+          value={value.mileage || ""}
+          onChange={e => handleInput("mileage", e.target.value)}
+          style={{
+            width: "100%",
+            fontSize: 16,
+            padding: "10px 8px",
+            marginTop: 2,
+            borderRadius: 6,
+            border: "1px solid #ccc"
+          }}
+        />
+      </div>
+      {/* 他の項目も追加可 */}
+      <div style={{ margin: "12px 0" }}>
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={handleQRUpload}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            width: "100%",
+            fontSize: 16,
+            padding: "12px 0",
+            borderRadius: 6,
+            background: "#2563eb",
+            color: "#fff",
+            border: "none"
+          }}
+        >車検証QRコード読取</button>
+      </div>
+    </div>
+  );
+}
+
+// QRデータのパース関数例（実際はQR仕様に合わせて実装）
+// function parseShakenQR(data: string): Partial<CarSpec> {
+//   // QRデータを分解して各項目に割り当て
+//   return { year: "...", model: "...", name: "...", mileage: "..." };
+// }
+
+export default function App() {
+  const [tab, setTab] = useState<'diagram' | 'spec'>('diagram');
+  const [spec, setSpec] = useState<CarSpec>({
+    year: '',
+    model: '',
+    name: '',
+    mileage: ''
+  });
+
+  return (
+    <div style={{ padding: 20 }}>
+      <div style={{ marginBottom: 16 }}>
+        <button onClick={() => setTab('diagram')}>展開図</button>
+        <button onClick={() => setTab('spec')}>諸元入力</button>
+      </div>
+      {tab === 'diagram' && (
+        // 展開図や瑕疵入力UI
+        <div>
+          {/* ここに展開図コンポーネントやDefectInputDialogを配置 */}
+          <p>ここに展開図UI</p>
+        </div>
+      )}
+      {tab === 'spec' && (
+        <SpecInputSheet value={spec} onChange={setSpec} />
+      )}
+    </div>
+  );
+}
+
+const tabBtn = {
+  flex: 1,
+  padding: "10px 0",
+  border: "none",
+  background: "#f1f5f9",
+  fontWeight: 600,
+  fontSize: 16,
+  borderRadius: 24,
+  margin: "0 8px",
+  cursor: "pointer"
+};
+const activeTab = {
+  ...tabBtn,
+  background: "#fff",
+  border: "2px solid #2563eb",
+  color: "#2563eb"
+};
