@@ -19,25 +19,24 @@ export interface CarSpec {
 const USS_DEFECT_TYPES = [
   { code: 'A', label: 'キズ' },
   { code: 'U', label: '凹み' },
-  { code: 'W', label: '補修' },
-  { code: 'S', label: 'サビ' },
-  { code: '✖✖', label: '交換' },
   { code: 'B', label: 'キズ凹' },
-  { code: 'C', label: '腐食' },
-  { code: 'Y', label: '割れ' },
-  { code: 'G', label: '飛び石' },
-  { code: '✖', label: 'ヒビ' },
+  { code: 'W', label: '補修' },
+  { code: '✖✖', label: '交換' },
+];
+
+const OTHER_DEFECT_TYPES = [
+  { code: 'Y1', label: 'Y1' },
+  { code: 'Y2', label: 'Y2' },
+  { code: 'S1', label: 'S1' },
+  { code: 'S2', label: 'S2' },
 ];
 
 const LEVEL_LABELS = {
   'A': ['A', 'A1', 'A2', 'A3'],
   'U': ['U', 'U1', 'U2', 'U3'],
   'B': ['B', 'B1', 'B2', 'B3'],
-  'C': ['C', 'C1', 'C2', 'C3'],
-  'S': ['S', 'S1', 'S2', 'S3'],
-  'Y': ['Y', 'Y1', 'Y2', 'Y3'],
-  'G': ['G'],
-  '✖': ['✖'],
+  'W': ['W', 'W1', 'W2', 'W3'],
+  '✖✖': ['✖✖'],
 };
 
 const HOTSPOTS = [
@@ -99,15 +98,19 @@ export function DefectInputDialog(props: {
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
 
+    // ✖✖はどの方向でも「脱アト」
     if (type === '✖✖') {
-      if (absY > absX && dy < -30) {
-        quickAdd({ type: '✖✖', note: '調整痕' });
+      if (absX > 30 || absY > 30) {
+        quickAdd({ type: '✖✖', note: '脱アト' });
+      } else {
+        quickAdd({ type: '✖✖' });
       }
       startX.current = null;
       startY.current = null;
       return;
     }
 
+    // メイン瑕疵のフリック入力
     if (LEVEL_LABELS[type]) {
       let levelIdx = 0;
       if (absY > absX && dy < -30) levelIdx = 1; // 上
@@ -115,13 +118,8 @@ export function DefectInputDialog(props: {
       else if (absX > absY && dx > 30) levelIdx = 2; // 右
       else if (absY > absX && dy > 30) levelIdx = 3; // 下
 
-      // Uのタップ（levelIdx===0）はEにする
-      if (type === 'U' && levelIdx === 0) {
-        quickAdd({ type: 'E' });
-      } else {
-        const label = LEVEL_LABELS[type][levelIdx] || type;
-        quickAdd({ type, level: label.replace(type, '') });
-      }
+      const label = LEVEL_LABELS[type][levelIdx] || type;
+      quickAdd({ type, level: label.replace(type, '') });
     }
     startX.current = null;
     startY.current = null;
@@ -146,30 +144,57 @@ export function DefectInputDialog(props: {
       onClick={() => onOpenChange(false)}
     >
       <div
-        style={{ width: 320, background: '#fff', borderRadius: 8, padding: 16 }}
+        style={{ width: 340, background: '#fff', borderRadius: 8, padding: 16 }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{partName}</div>
         {selectingType ? (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {defectTypes.map(opt => (
-              <button
-                key={opt.code}
-                onClick={() => { setType(opt.code); setSelectingType(false); }}
-                style={{
-                  padding: '10px 14px',
-                  borderRadius: 8,
-                  border: '1.5px solid #2563eb',
-                  background: '#e0e7ff',
-                  fontWeight: 700,
-                  fontSize: 18,
-                  cursor: 'pointer'
-                }}
-              >
-                {opt.code}
-              </button>
-            ))}
-          </div>
+          <>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af', marginBottom: 6 }}>メイン瑕疵</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+              {defectTypes.map(opt => (
+                <button
+                  key={opt.code}
+                  onClick={() => { setType(opt.code); setSelectingType(false); }}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    border: '2px solid #2563eb',
+                    background: '#e0e7ff',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {opt.code}
+                </button>
+              ))}
+            </div>
+            {partName !== 'Fガラス' && (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>その他瑕疵</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {OTHER_DEFECT_TYPES.map(opt => (
+                    <button
+                      key={opt.code}
+                      onClick={() => quickAdd({ type: opt.code })}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1.5px solid #94a3b8',
+                        background: '#f1f5f9',
+                        fontWeight: 700,
+                        fontSize: 16,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {opt.code}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         ) : (
           <div>
             <div

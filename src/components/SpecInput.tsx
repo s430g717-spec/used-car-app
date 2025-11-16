@@ -115,7 +115,48 @@ export function SpecInput() {
     setOcrProgress(0);
 
     try {
-      const result = await Tesseract.recognize(imageFile, 'jpn', {
+      // 画像を前処理（コントラスト強化）
+      const img = new Image();
+      const imageUrl = URL.createObjectURL(imageFile);
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
+
+      // Canvasで画像を前処理
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        
+        // コントラストを上げる
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const contrast = 1.5; // コントラスト倍率
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+        
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = factor * (data[i] - 128) + 128;     // R
+          data[i + 1] = factor * (data[i + 1] - 128) + 128; // G
+          data[i + 2] = factor * (data[i + 2] - 128) + 128; // B
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+      }
+
+      URL.revokeObjectURL(imageUrl);
+
+      // OCR実行（前処理済み画像を使用）
+      const processedBlob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.95);
+      });
+
+      const result = await Tesseract.recognize(processedBlob, 'jpn+eng', {
         logger: (m) => {
           if (m.status === 'recognizing text') {
             setOcrProgress(Math.round(m.progress * 100));
@@ -129,20 +170,44 @@ export function SpecInput() {
       let detectedModel = '';
       let detectedChassis = '';
 
-      // 型式を抽出（DBA-、CBA-、DAA- などで始まるパターン）
-      const modelMatch = text.match(/([A-Z]{3}-[A-Z0-9]+)/i);
-      if (modelMatch) {
-        const fullModel = modelMatch[1].toUpperCase();
-        // 排ガス記号を除去して保存
-        detectedModel = fullModel.replace(/^[A-Z]{3}-/, '');
-        setSpec(prev => ({ ...prev, model: detectedModel }));
+      // 型式を抽出（より柔軟なパターン）
+      const modelPatterns = [
+        /([A-Z]{3}[-\s]?[A-Z0-9]{4,8})/i,  // DBA-ZRE212形式
+        /型式[：:\s]*([A-Z0-9]{4,8})/i,     // 型式: ZRE212形式
+        /([A-Z]{2,4}[0-9]{3,5}[A-Z]?)/       // ZRE212形式
+      ];
+
+      for (const pattern of modelPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          let fullModel = match[1].replace(/\s/g, '').toUpperCase();
+          // 排ガス記号を除去
+          detectedModel = fullModel.replace(/^[A-Z]{3}-/, '');
+          if (detectedModel.length >= 4) {
+            setSpec(prev => ({ ...prev, model: detectedModel }));
+            console.log('検出された型式:', detectedModel);
+            break;
+          }
+        }
       }
 
-      // 車体番号を抽出（アルファベット+ハイフン+数字のパターン）
-      const chassisMatch = text.match(/([A-Z]{2,5}[-\s]?\d{6,8})/i);
-      if (chassisMatch) {
-        detectedChassis = chassisMatch[1].replace(/\s/g, '');
-        setSpec(prev => ({ ...prev, chassisNumber: detectedChassis.toUpperCase() }));
+      // 車体番号を抽出（より柔軟なパターン）
+      const chassisPatterns = [
+        /車体番号[：:\s]*([A-Z]{2,5}[-\s]?\d{6,8})/i,
+        /([A-Z]{2,5}[-\s]\d{6,8})/i,
+        /([A-Z]{3,5}\d{6,8})/i
+      ];
+
+      for (const pattern of chassisPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          detectedChassis = match[1].replace(/\s/g, '').toUpperCase();
+          if (detectedChassis.length >= 8) {
+            setSpec(prev => ({ ...prev, chassisNumber: detectedChassis }));
+            console.log('検出された車体番号:', detectedChassis);
+            break;
+          }
+        }
       }
 
       // グレードを推測
@@ -150,16 +215,18 @@ export function SpecInput() {
         const gradeInfo = inferGradeFromChassis(detectedModel, detectedChassis);
         if (gradeInfo) {
           setSpec(prev => ({ ...prev, grade: gradeInfo.grade }));
-          const confidenceText = gradeInfo.confidence === 'high' ? '高確度' : 
-                                 gradeInfo.confidence === 'medium' ? '中確度' : '低確度';
-          console.log(`グレード推測: ${gradeInfo.grade} (${confidenceText})`);
+          console.log(`グレード推測: ${gradeInfo.grade}`);
         }
       }
 
-      alert('文字認識が完了しました。\n内容を確認して必要に応じて修正してください。');
+      if (detectedModel || detectedChassis) {
+        alert('文字認識が完了しました。\n内容を確認して必要に応じて修正してください。');
+      } else {
+        alert('型式・車体番号を認識できませんでした。\n・明るい場所で撮影してください\n・ピントを合わせてください\n・手動入力もご利用いただけます');
+      }
     } catch (error) {
       console.error('OCR処理エラー:', error);
-      alert('文字認識に失敗しました。\n画像を変えて再度お試しください。');
+      alert('文字認識に失敗しました。\n・明るい場所で撮影してください\n・画像を変えて再度お試しください\n・手動入力もご利用いただけます');
     } finally {
       setIsProcessing(false);
       setOcrProgress(0);
@@ -177,17 +244,36 @@ export function SpecInput() {
   // カメラ起動
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
+      // まず背面カメラを試す
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        });
+      } catch (e) {
+        // 背面カメラが使えない場合は前面カメラを使用
+        console.log('背面カメラ使用不可、前面カメラを使用します');
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        });
+      }
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
         setIsCameraActive(true);
       }
     } catch (error) {
       console.error('カメラ起動エラー:', error);
-      alert('カメラを起動できませんでした。\nファイル選択をお試しください。');
+      alert('カメラを起動できませんでした。\n・カメラの使用を許可してください\n・ファイル選択もご利用いただけます');
     }
   };
 
