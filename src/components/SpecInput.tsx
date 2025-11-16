@@ -244,36 +244,57 @@ export function SpecInput() {
   // カメラ起動
   const startCamera = async () => {
     try {
-      // まず背面カメラを試す
+      // iOSではconstraintsを単純化する必要がある
       let stream;
       try {
+        // まずシンプルな設定で試す（iOS対応）
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          }
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
         });
       } catch (e) {
-        // 背面カメラが使えない場合は前面カメラを使用
-        console.log('背面カメラ使用不可、前面カメラを使用します');
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: 'user',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          }
-        });
+        console.log('背面カメラ使用不可、前面カメラを試します:', e);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'user',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            },
+            audio: false
+          });
+        } catch (e2) {
+          // 最終的に最もシンプルな設定で試す
+          console.log('特定のカメラ指定失敗、デフォルト設定で試します:', e2);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        }
       }
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setIsCameraActive(true);
+        // iOSではplaysinlineが必須
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.setAttribute('webkit-playsinline', 'true');
+        try {
+          await videoRef.current.play();
+          setIsCameraActive(true);
+        } catch (playError) {
+          console.error('ビデオ再生エラー:', playError);
+          alert('カメラの起動に失敗しました。\nブラウザの設定でカメラの使用を許可してください。');
+          // ストリームを停止
+          stream.getTracks().forEach(track => track.stop());
+        }
       }
     } catch (error) {
       console.error('カメラ起動エラー:', error);
-      alert('カメラを起動できませんでした。\n・カメラの使用を許可してください\n・ファイル選択もご利用いただけます');
+      alert('カメラを起動できませんでした。\n・Safariの設定でカメラの使用を許可してください\n・プライベートブラウズモードの場合は通常モードをお試しください\n・ファイル選択もご利用いただけます');
     }
   };
 
