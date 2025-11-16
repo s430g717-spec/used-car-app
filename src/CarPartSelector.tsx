@@ -46,13 +46,17 @@ export default function CarPartSelector() {
   });
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activePart, setActivePart] = useState<string | null>(null); // タップ中の部位を追跡
+  const [activePart, setActivePart] = useState<string | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [inputMode, setInputMode] = useState<'pattern-a' | 'pattern-b'>(() => {
+    const saved = localStorage.getItem('defectInputMode');
+    return (saved as 'pattern-a' | 'pattern-b') || 'pattern-b';
+  });
 
   const partDefectLabels = React.useMemo(() => {
     const labels: Record<string, string[]> = {};
     partDefects.forEach(pd => {
-      labels[pd.part] = pd.defects.map(d => `${d.type}${d.level || ''}`);
+      labels[pd.part] = pd.defects.map(d => `${d.type}${d.level || ''}${d.note ? `(${d.note})` : ''}`);
     });
     return labels;
   }, [partDefects]);
@@ -60,12 +64,11 @@ export default function CarPartSelector() {
   React.useEffect(() => {
     localStorage.setItem('partDefects', JSON.stringify(partDefects));
     
-    // 展開図をキャプチャしてLocalStorageに保存
     const captureDiagram = async () => {
       const diagramElement = document.querySelector('[data-diagram="car-parts"]') as HTMLElement;
       if (diagramElement) {
         try {
-          await new Promise(resolve => setTimeout(resolve, 500)); // レンダリング待機
+          await new Promise(resolve => setTimeout(resolve, 500));
           const canvas = await html2canvas(diagramElement, {
             scale: 2,
             backgroundColor: '#ffffff',
@@ -82,6 +85,10 @@ export default function CarPartSelector() {
     
     captureDiagram();
   }, [partDefects]);
+
+  React.useEffect(() => {
+    localStorage.setItem('defectInputMode', inputMode);
+  }, [inputMode]);
 
   const openDefectDialog = (partId: string) => {
     setSelectedPart(partId);
@@ -118,6 +125,46 @@ export default function CarPartSelector() {
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
       <div style={{ position: 'relative', marginBottom: '20px' }}>
         <h2 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 700, color: '#1e293b' }}>車両展開図</h2>
+        
+        {/* 入力モード切り替えボタン */}
+        <div style={{
+          display: 'flex',
+          gap: 8,
+          justifyContent: 'center',
+          marginTop: 12,
+          marginBottom: 16
+        }}>
+          <button
+            onClick={() => setInputMode('pattern-a')}
+            style={{
+              padding: '10px 20px',
+              borderRadius: 8,
+              border: inputMode === 'pattern-a' ? '2px solid #10b981' : '2px solid #e2e8f0',
+              background: inputMode === 'pattern-a' ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' : '#fff',
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            📋 パターンA (タップ式)
+          </button>
+          <button
+            onClick={() => setInputMode('pattern-b')}
+            style={{
+              padding: '10px 20px',
+              borderRadius: 8,
+              border: inputMode === 'pattern-b' ? '2px solid #3b82f6' : '2px solid #e2e8f0',
+              background: inputMode === 'pattern-b' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : '#fff',
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            👆 パターンB (フリック式)
+          </button>
+        </div>
         
         {/* 右上のiボタン */}
         <button
@@ -179,12 +226,16 @@ export default function CarPartSelector() {
               <span>操作方法</span>
             </div>
             <div style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '16px' }}>
-              ① 車両の各部位をタップして選択<br/>
-              ② 瑕疵の種類（キズ、ヘコミ等）を入力<br/>
-              ③ レベル（1〜3）と備考を入力して保存
+              <strong>パターンA (タップ式):</strong><br/>
+              すべての瑕疵タイプとレベルをタップで選択<br/>
+              A1〜A3、U、B、W、S、C、Y、✖✖、脱アト、G<br/><br/>
+              
+              <strong>パターンB (フリック式):</strong><br/>
+              メイン5種(A,U,B,W,✖✖)をフリックでレベル入力<br/>
+              その他4種(Y1,Y2,S1,S2)はタップで即追加
             </div>
             <div style={{ padding: '14px', background: 'rgba(255,255,255,0.2)', borderRadius: '10px', fontSize: '14px', marginBottom: '16px' }}>
-              <strong>💡 ヒント:</strong> 部位をタップすると、その部位の瑕疵入力画面が表示されます。複数の瑕疵を登録できます。
+              <strong>💡 ヒント:</strong> 入力済み瑕疵をタップすると削除できます
             </div>
             <div style={{ textAlign: 'center', fontSize: '13px', opacity: 0.9 }}>
               画面をタップして閉じる
@@ -254,17 +305,13 @@ export default function CarPartSelector() {
                   onClick={() => openDefectDialog(hotspot.id)}
                 />
                 {hasDefects && (() => {
-                  // 部位ごとに表示位置をオフセット
                   let offsetY = 0.5;
                   
                   if (hotspot.id === 'front-bumper') {
-                    // Fバンパーは上方向にオフセット
                     offsetY = -5;
                   } else if (hotspot.id === 'rear-gate') {
-                    // Rゲートは下方向にオフセット
                     offsetY = 8;
                   } else if (hotspot.id === 'rear-bumper') {
-                    // Rバンパーは下方向にオフセット
                     offsetY = 6;
                   }
                   
@@ -297,6 +344,7 @@ export default function CarPartSelector() {
         partName={selectedPartLabel || ''}
         existingDefects={currentDefects}
         onConfirm={saveDefects}
+        inputMode={inputMode}
       />
     </div>
   );
