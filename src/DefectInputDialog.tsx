@@ -37,7 +37,7 @@ const USS_DEFECT_TYPES = [
   { code: 'U', label: '凹み' },
   { code: 'B', label: 'キズ凹' },
   { code: 'W', label: '補修' },
-  { code: '✖✖', label: '交換' },
+  { code: '✖✖', label: '交換', color: '#dc2626' }, // 赤色
 ];
 
 const OTHER_DEFECT_TYPES = [
@@ -61,12 +61,13 @@ export function DefectInputDialog(props: {
   partName: string;
   existingDefects: Defect[];
   onConfirm: (defects: Defect[]) => void;
-  inputMode: 'pattern-a' | 'pattern-b'; // 入力パターン
+  inputMode: 'pattern-a' | 'pattern-b';
 }) {
   const { open, onOpenChange, partName, existingDefects, onConfirm, inputMode } = props;
   const [selectingType, setSelectingType] = useState(true);
   const [type, setType] = useState('A');
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [isTouching, setIsTouching] = useState(false);
+  const [flickDirection, setFlickDirection] = useState<'up' | 'down' | 'left' | 'right' | null>(null);
 
   // フリック用
   const startX = useRef<number | null>(null);
@@ -74,7 +75,8 @@ export function DefectInputDialog(props: {
 
   useEffect(() => {
     setSelectingType(true);
-    setSelectedLevel(null);
+    setIsTouching(false);
+    setFlickDirection(null);
   }, [existingDefects, open]);
 
   if (!open) return null;
@@ -184,10 +186,11 @@ export function DefectInputDialog(props: {
                     style={{
                       padding: '12px 16px',
                       borderRadius: 8,
-                      border: '2px solid #94a3b8',
-                      background: '#f1f5f9',
+                      border: opt.code === '✖✖' ? '2px solid #dc2626' : '2px solid #94a3b8',
+                      background: opt.code === '✖✖' ? '#fee2e2' : '#f1f5f9',
                       fontWeight: 700,
                       fontSize: 16,
+                      color: opt.code === '✖✖' ? '#dc2626' : '#1e293b',
                       cursor: 'pointer'
                     }}
                   >
@@ -242,18 +245,31 @@ export function DefectInputDialog(props: {
     );
   }
 
-  // パターンB: フリック式
-  const handleTypeSelect = (code: string) => {
-    setType(code);
-    setSelectingType(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
+  // パターンB: フリック式（改善版）
+  const handleTouchStart = (e: React.TouchEvent, selectedType: string) => {
+    setType(selectedType);
+    setIsTouching(true);
+    setFlickDirection(null);
     startX.current = e.touches[0].clientX;
     startY.current = e.touches[0].clientY;
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startX.current === null || startY.current === null) return;
+    const dx = e.touches[0].clientX - startX.current;
+    const dy = e.touches[0].clientY - startY.current;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    if (absY > absX && dy < -30) setFlickDirection('up');
+    else if (absX > absY && dx < -30) setFlickDirection('left');
+    else if (absX > absY && dx > 30) setFlickDirection('right');
+    else if (absY > absX && dy > 30) setFlickDirection('down');
+    else setFlickDirection(null);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, selectedType: string) => {
+    setIsTouching(false);
     if (startX.current === null || startY.current === null) return;
     const dx = e.changedTouches[0].clientX - startX.current;
     const dy = e.changedTouches[0].clientY - startY.current;
@@ -261,7 +277,7 @@ export function DefectInputDialog(props: {
     const absY = Math.abs(dy);
 
     // ✖✖はどの方向でも「脱アト」
-    if (type === '✖✖') {
+    if (selectedType === '✖✖') {
       if (absX > 30 || absY > 30) {
         quickAdd({ type: '✖✖', note: '脱アト' });
       } else {
@@ -269,22 +285,24 @@ export function DefectInputDialog(props: {
       }
       startX.current = null;
       startY.current = null;
+      setFlickDirection(null);
       return;
     }
 
     // メイン瑕疵のフリック入力
-    if (LEVEL_LABELS[type]) {
+    if (LEVEL_LABELS[selectedType]) {
       let levelIdx = 0;
       if (absY > absX && dy < -30) levelIdx = 1; // 上
       else if (absX > absY && dx < -30) levelIdx = 2; // 左
       else if (absX > absY && dx > 30) levelIdx = 2; // 右
       else if (absY > absX && dy > 30) levelIdx = 3; // 下
 
-      const label = LEVEL_LABELS[type][levelIdx] || type;
-      quickAdd({ type, level: label.replace(type, '') });
+      const label = LEVEL_LABELS[selectedType][levelIdx] || selectedType;
+      quickAdd({ type: selectedType, level: label.replace(selectedType, '') });
     }
     startX.current = null;
     startY.current = null;
+    setFlickDirection(null);
   };
 
   return (
@@ -297,7 +315,7 @@ export function DefectInputDialog(props: {
     >
       <div
         style={{ 
-          width: 360, 
+          width: 380, 
           maxHeight: '90vh',
           overflow: 'auto',
           background: '#fff', 
@@ -339,100 +357,110 @@ export function DefectInputDialog(props: {
           </div>
         )}
 
-        {selectingType ? (
-          <>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>
-              メイン瑕疵（フリックでレベル入力）
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-              {USS_DEFECT_TYPES.map(opt => (
-                <button
-                  key={opt.code}
-                  onClick={() => { setType(opt.code); setSelectingType(false); }}
-                  style={{
-                    padding: '14px 18px',
-                    borderRadius: 8,
-                    border: '2px solid #2563eb',
-                    background: '#dbeafe',
-                    fontWeight: 700,
-                    fontSize: 18,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {opt.code}
-                </button>
-              ))}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
-              その他瑕疵（タップで即追加）
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {OTHER_DEFECT_TYPES.map(opt => (
-                <button
-                  key={opt.code}
-                  onClick={() => quickAdd({ type: opt.code })}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 8,
-                    border: '1.5px solid #94a3b8',
-                    background: '#f1f5f9',
-                    fontWeight: 700,
-                    fontSize: 16,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {opt.code}
-                </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, textAlign: 'center', color: '#64748b' }}>
-              上下左右にフリックしてレベル入力
-            </div>
+        {/* メイン瑕疵（大きく表示・フリック入力） */}
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>
+          メイン瑕疵（長押ししてフリック）
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+          {USS_DEFECT_TYPES.map(opt => (
             <div
+              key={opt.code}
               style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                fontSize: 48,
+                position: 'relative',
+                padding: '24px 8px',
+                borderRadius: 12,
+                border: opt.code === '✖✖' 
+                  ? '3px solid #dc2626' 
+                  : isTouching && type === opt.code 
+                    ? '3px solid #2563eb' 
+                    : '2px solid #2563eb',
+                background: opt.code === '✖✖'
+                  ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
+                  : isTouching && type === opt.code 
+                    ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' 
+                    : '#dbeafe',
                 fontWeight: 700,
-                userSelect: 'none',
-                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                borderRadius: 16,
-                padding: '40px 0',
-                margin: '16px 0',
+                fontSize: 28,
+                color: opt.code === '✖✖' ? '#dc2626' : '#1e40af',
+                cursor: 'pointer',
+                textAlign: 'center',
                 touchAction: 'none',
-                border: '3px solid #2563eb'
+                userSelect: 'none',
+                transition: 'all 0.2s',
+                transform: isTouching && type === opt.code ? 'scale(1.05)' : 'scale(1)',
+                boxShadow: isTouching && type === opt.code 
+                  ? '0 8px 24px rgba(59,130,246,0.4)' 
+                  : '0 2px 8px rgba(0,0,0,0.1)'
               }}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onClick={() => quickAdd({ type })}
+              onTouchStart={(e) => handleTouchStart(e, opt.code)}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={(e) => handleTouchEnd(e, opt.code)}
+              onTouchCancel={() => {
+                setIsTouching(false);
+                setFlickDirection(null);
+              }}
             >
-              {type}
+              {opt.code}
+              
+              {/* フリック方向インジケーター */}
+              {isTouching && type === opt.code && flickDirection && (
+                <div style={{
+                  position: 'absolute',
+                  top: flickDirection === 'up' ? -30 : flickDirection === 'down' ? 'calc(100% + 10px)' : '50%',
+                  left: flickDirection === 'left' ? -30 : flickDirection === 'right' ? 'calc(100% + 10px)' : '50%',
+                  transform: flickDirection === 'up' || flickDirection === 'down' ? 'translateX(-50%)' : 'translateY(-50%)',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: '#2563eb',
+                  background: '#fff',
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  border: '2px solid #2563eb',
+                  whiteSpace: 'nowrap',
+                  zIndex: 10,
+                  animation: 'pulse 0.3s ease-in-out infinite'
+                }}>
+                  {opt.code === '✖✖' ? '脱アト' : 
+                   flickDirection === 'up' ? `${opt.code}1` :
+                   flickDirection === 'down' ? `${opt.code}3` :
+                   `${opt.code}2`}
+                </div>
+              )}
             </div>
-            <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', marginBottom: 16 }}>
-              タップ: {type} のみ追加<br/>
-              フリック: レベル付きで追加
-            </div>
-            <button 
-              onClick={() => setSelectingType(true)} 
-              style={{ 
-                width: '100%', 
-                padding: 10, 
-                borderRadius: 8, 
-                border: '1px solid #cbd5e1', 
-                background: '#f8fafc',
-                fontWeight: 600,
+          ))}
+        </div>
+
+        {/* その他瑕疵（小さく表示・タップで即追加） */}
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+          その他瑕疵（タップで即追加）
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {OTHER_DEFECT_TYPES.map(opt => (
+            <button
+              key={opt.code}
+              onClick={() => quickAdd({ type: opt.code })}
+              style={{
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: '1.5px solid #94a3b8',
+                background: '#f1f5f9',
+                fontWeight: 700,
+                fontSize: 14,
                 cursor: 'pointer'
               }}
             >
-              ← 戻る
+              {opt.code}
             </button>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.1); }
+        }
+      `}</style>
     </div>
   );
 }

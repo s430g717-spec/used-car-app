@@ -126,43 +126,68 @@ export default function CarPartSelector() {
       <div style={{ position: 'relative', marginBottom: '20px' }}>
         <h2 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 700, color: '#1e293b' }}>車両展開図</h2>
         
-        {/* 入力モード切り替えボタン */}
+        {/* 入力モード切り替えアイコン（右上のi隣） */}
         <div style={{
+          position: 'absolute',
+          right: 50,
+          top: 0,
           display: 'flex',
-          gap: 8,
-          justifyContent: 'center',
-          marginTop: 12,
-          marginBottom: 16
+          gap: 6
         }}>
+          {/* タップ式アイコン */}
           <button
             onClick={() => setInputMode('pattern-a')}
             style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              border: inputMode === 'pattern-a' ? '2px solid #10b981' : '2px solid #e2e8f0',
-              background: inputMode === 'pattern-a' ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' : '#fff',
-              fontWeight: 600,
-              fontSize: 14,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              border: inputMode === 'pattern-a' ? '3px solid #10b981' : '2px solid #e2e8f0',
+              background: inputMode === 'pattern-a' 
+                ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' 
+                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
               cursor: 'pointer',
-              transition: 'all 0.2s'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '20px',
+              transition: 'all 0.2s',
+              boxShadow: inputMode === 'pattern-a' 
+                ? '0 4px 12px rgba(16,185,129,0.3)' 
+                : '0 2px 6px rgba(0,0,0,0.1)'
             }}
+            title="タップ式入力"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            📋 パターンA (タップ式)
+            👆
           </button>
+          
+          {/* フリック式アイコン */}
           <button
             onClick={() => setInputMode('pattern-b')}
             style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              border: inputMode === 'pattern-b' ? '2px solid #3b82f6' : '2px solid #e2e8f0',
-              background: inputMode === 'pattern-b' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : '#fff',
-              fontWeight: 600,
-              fontSize: 14,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              border: inputMode === 'pattern-b' ? '3px solid #3b82f6' : '2px solid #e2e8f0',
+              background: inputMode === 'pattern-b' 
+                ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' 
+                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
               cursor: 'pointer',
-              transition: 'all 0.2s'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '20px',
+              transition: 'all 0.2s',
+              boxShadow: inputMode === 'pattern-b' 
+                ? '0 4px 12px rgba(59,130,246,0.3)' 
+                : '0 2px 6px rgba(0,0,0,0.1)'
             }}
+            title="フリック式入力"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            👆 パターンB (フリック式)
+            👉
           </button>
         </div>
         
@@ -176,23 +201,35 @@ export default function CarPartSelector() {
             width: 40,
             height: 40,
             borderRadius: '50%',
-            border: '2px solid #3b82f6',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            border: '2px solid #64748b',
+            background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
             color: '#fff',
             fontSize: '20px',
             fontWeight: 700,
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
+            boxShadow: '0 4px 12px rgba(100,116,139,0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'transform 0.2s'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'
+          }
         >
           ⓘ
         </button>
+        
+        {/* 現在の入力モード表示 */}
+        <div style={{
+          textAlign: 'center',
+          marginTop: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          color: inputMode === 'pattern-a' ? '#10b981' : '#3b82f6'
+        }}>
+          {inputMode === 'pattern-a' ? '📋 タップ式入力' : '👉 フリック式入力'}
+        </div>
       </div>
       
       {/* 操作説明モーダル */}
@@ -226,11 +263,11 @@ export default function CarPartSelector() {
               <span>操作方法</span>
             </div>
             <div style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '16px' }}>
-              <strong>パターンA (タップ式):</strong><br/>
+              <strong>👆 タップ式入力:</strong><br/>
               すべての瑕疵タイプとレベルをタップで選択<br/>
               A1〜A3、U、B、W、S、C、Y、✖✖、脱アト、G<br/><br/>
               
-              <strong>パターンB (フリック式):</strong><br/>
+              <strong>👉 フリック式入力:</strong><br/>
               メイン5種(A,U,B,W,✖✖)をフリックでレベル入力<br/>
               その他4種(Y1,Y2,S1,S2)はタップで即追加
             </div>
