@@ -20,10 +20,11 @@ const USS_DEFECT_TYPES = [
   { code: 'A', label: 'キズ' },
   { code: 'U', label: '凹み' },
   { code: 'W', label: '補修' },
+  { code: 'S', label: 'サビ' },
   { code: '✖✖', label: '交換' },
   { code: 'B', label: 'キズ凹' },
   { code: 'C', label: '腐食' },
-  { code: 'Y', label: 'その他' }, // 「割れ」→「その他」に変更
+  { code: 'Y', label: '割れ' },
   { code: 'G', label: '飛び石' },
   { code: '✖', label: 'ヒビ' },
 ];
@@ -33,7 +34,8 @@ const LEVEL_LABELS = {
   'U': ['U', 'U1', 'U2', 'U3'],
   'B': ['B', 'B1', 'B2', 'B3'],
   'C': ['C', 'C1', 'C2', 'C3'],
-  'Y': ['Y', 'Y1', 'Y2', 'Y3', 'S1', 'S2'], // S1,S2を追加
+  'S': ['S', 'S1', 'S2', 'S3'],
+  'Y': ['Y', 'Y1', 'Y2', 'Y3'],
   'G': ['G'],
   '✖': ['✖'],
 };

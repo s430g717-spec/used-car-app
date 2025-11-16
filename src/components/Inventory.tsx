@@ -18,6 +18,30 @@ interface InventoryItem {
   certifiedBy: string | null;
 }
 
+const USS_DEFECT_TYPES = [
+  { code: 'A', label: 'キズ' },
+  { code: 'U', label: '凹み' },
+  { code: 'W', label: '補修' },
+  { code: 'S', label: 'サビ' },
+  { code: '✖✖', label: '交換' },
+  { code: 'B', label: 'キズ凹' },
+  { code: 'C', label: '腐食' },
+  { code: 'Y', label: '割れ' },
+  { code: 'G', label: '飛び石' },
+  { code: '✖', label: 'ヒビ' },
+];
+
+const LEVEL_LABELS = {
+  'A': ['A', 'A1', 'A2', 'A3'],
+  'U': ['U', 'U1', 'U2', 'U3'],
+  'B': ['B', 'B1', 'B2', 'B3'],
+  'C': ['C', 'C1', 'C2', 'C3'],
+  'S': ['S', 'S1', 'S2', 'S3'],
+  'Y': ['Y', 'Y1', 'Y2', 'Y3'],
+  'G': ['G'],
+  '✖': ['✖'],
+};
+
 export function Inventory() {
   const { currentUser, userData } = useAuth();
   const [items, setItems] = useState<InventoryItem[]>([]);
