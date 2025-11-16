@@ -123,19 +123,6 @@ function createInspectionHTML(
         </div>
       </div>
 
-      <!-- 車両基本情報 -->
-      <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 2px solid #c9a961;">
-        <h3 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #c9a961; padding-bottom: 6px;">車両基本情報</h3>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-          <div><span style="font-size: 10px; color: #666;">車名</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${carSpec.name || '-'}</div></div>
-          <div><span style="font-size: 10px; color: #666;">型式</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${carSpec.model || '-'}</div></div>
-          <div><span style="font-size: 10px; color: #666;">グレード</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${carSpec.grade || '-'}</div></div>
-          <div><span style="font-size: 10px; color: #666;">年式</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${carSpec.year || '-'}</div></div>
-          <div><span style="font-size: 10px; color: #666;">車体番号</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${carSpec.chassisNumber || '-'}</div></div>
-          <div><span style="font-size: 10px; color: #666;">走行距離</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${carSpec.mileage || '-'}km</div></div>
-        </div>
-      </div>
-
       <!-- 車両画像 -->
       ${carSpec.frontImage || carSpec.rearImage ? `
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">

@@ -315,12 +315,10 @@ export function Inventory() {
                       </span>
                     </div>
                     <div style={{ fontSize: 12, color: '#94a3b8' }}>
-                      {new Date(item.createdAt).toLocaleString('ja-JP', { 
+                      {new Date(item.createdAt).toLocaleDateString('ja-JP', { 
                         year: 'numeric', 
                         month: '2-digit', 
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                        day: '2-digit'
                       })}
                     </div>
                   </div>

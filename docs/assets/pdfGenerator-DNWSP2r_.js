@@ -1,6 +1,6 @@
-import{E as v,h as m}from"./index-B_olwNTL.js";async function b(t,n,o,r){var i;const d=new v("p","mm","a4"),a=210,e=document.createElement("div");e.style.position="absolute",e.style.left="-9999px",e.style.width="210mm",e.innerHTML=c(t,n,o,r),document.body.appendChild(e);try{await new Promise(f=>setTimeout(f,300));const s=await m(e,{scale:2,useCORS:!0,allowTaint:!0,backgroundColor:"#ffffff",windowWidth:e.scrollWidth,windowHeight:e.scrollHeight}),l=s.toDataURL("image/png"),p=a-20,g=s.height*p/s.width;d.addImage(l,"PNG",10,10,p,g);const x=`鑑定書_${t.name||"車両"}_${((i=t.chassisNumber)==null?void 0:i.slice(-4))||""}_${new Date().toISOString().split("T")[0]}.pdf`;d.save(x)}finally{document.body.removeChild(e)}}function c(t,n,o,r){const d={};n.forEach(e=>{d[e.part]=e.defects.map(i=>`${i.type}${i.level||""}`)});const a={"front-bumper":"Fバンパー",hood:"ボンネット","front-glass":"Fガラス",roof:"ルーフ","right-front-fender":"右Fフェンダー","right-front-door":"右Fドア","right-rear-door":"右Rドア","right-rear-fender":"右Rフェンダー","rear-gate":"Rゲート","rear-bumper":"Rバンパー","left-rear-fender":"左Rフェンダー","left-rear-door":"左Rドア","left-front-door":"左Fドア","left-front-fender":"左Fフェンダー","left-step":"左ステップ","right-step":"右ステップ"};return Object.entries(d).map(([e,i])=>`
+import{E as c,h as m}from"./index-IwDz7oSD.js";async function h(e,a,o,d){var i;const r=new c("p","mm","a4"),n=210,t=document.createElement("div");t.style.position="absolute",t.style.left="-9999px",t.style.width="210mm",t.innerHTML=v(e,a,o,d),document.body.appendChild(t);try{await new Promise(f=>setTimeout(f,300));const s=await m(t,{scale:2,useCORS:!0,allowTaint:!0,backgroundColor:"#ffffff",windowWidth:t.scrollWidth,windowHeight:t.scrollHeight}),p=s.toDataURL("image/png"),l=n-20,g=s.height*l/s.width;r.addImage(p,"PNG",10,10,l,g);const x=`鑑定書_${e.name||"車両"}_${((i=e.chassisNumber)==null?void 0:i.slice(-4))||""}_${new Date().toISOString().split("T")[0]}.pdf`;r.save(x)}finally{document.body.removeChild(t)}}function v(e,a,o,d){const r={};a.forEach(t=>{r[t.part]=t.defects.map(i=>`${i.type}${i.level||""}`)});const n={"front-bumper":"Fバンパー",hood:"ボンネット","front-glass":"Fガラス",roof:"ルーフ","right-front-fender":"右Fフェンダー","right-front-door":"右Fドア","right-rear-door":"右Rドア","right-rear-fender":"右Rフェンダー","rear-gate":"Rゲート","rear-bumper":"Rバンパー","left-rear-fender":"左Rフェンダー","left-rear-door":"左Rドア","left-front-door":"左Fドア","left-front-fender":"左Fフェンダー","left-step":"左ステップ","right-step":"右ステップ"};return Object.entries(r).map(([t,i])=>`
       <div style="display: flex; border-bottom: 1px solid #e0e0e0; padding: 4px 0;">
-        <div style="flex: 0 0 100px; font-size: 11px; color: #333; font-weight: 600;">${a[e]||e}</div>
+        <div style="flex: 0 0 100px; font-size: 11px; color: #333; font-weight: 600;">${n[t]||t}</div>
         <div style="flex: 1; font-size: 11px; color: #555;">${i.join(", ")}</div>
       </div>
     `).join(""),`
@@ -34,36 +34,23 @@ import{E as v,h as m}from"./index-B_olwNTL.js";async function b(t,n,o,r){var i;c
         <!-- 右カラム: 展開図 (2:2の比率) -->
         <div style="flex: 2; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 2px solid #c9a961;">
           <h3 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #c9a961; padding-bottom: 6px;">車両展開図</h3>
-          ${r?`<img src="${r}" style="width: 100%; height: auto; border-radius: 4px;" />`:'<div style="text-align: center; padding: 40px; color: #999;">展開図なし</div>'}
-        </div>
-      </div>
-
-      <!-- 車両基本情報 -->
-      <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 2px solid #c9a961;">
-        <h3 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #c9a961; padding-bottom: 6px;">車両基本情報</h3>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-          <div><span style="font-size: 10px; color: #666;">車名</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${t.name||"-"}</div></div>
-          <div><span style="font-size: 10px; color: #666;">型式</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${t.model||"-"}</div></div>
-          <div><span style="font-size: 10px; color: #666;">グレード</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${t.grade||"-"}</div></div>
-          <div><span style="font-size: 10px; color: #666;">年式</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${t.year||"-"}</div></div>
-          <div><span style="font-size: 10px; color: #666;">車体番号</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${t.chassisNumber||"-"}</div></div>
-          <div><span style="font-size: 10px; color: #666;">走行距離</span><div style="font-size: 12px; font-weight: 600; color: #333; margin-top: 2px;">${t.mileage||"-"}km</div></div>
+          ${d?`<img src="${d}" style="width: 100%; height: auto; border-radius: 4px;" />`:'<div style="text-align: center; padding: 40px; color: #999;">展開図なし</div>'}
         </div>
       </div>
 
       <!-- 車両画像 -->
-      ${t.frontImage||t.rearImage?`
+      ${e.frontImage||e.rearImage?`
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
-          ${t.frontImage?`
+          ${e.frontImage?`
             <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 2px solid #c9a961;">
               <div style="font-size: 12px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; text-align: center;">外装</div>
-              <img src="${t.frontImage}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #e0e0e0;" />
+              <img src="${e.frontImage}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #e0e0e0;" />
             </div>
           `:""}
-          ${t.rearImage?`
+          ${e.rearImage?`
             <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 2px solid #c9a961;">
               <div style="font-size: 12px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; text-align: center;">内装</div>
-              <img src="${t.rearImage}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #e0e0e0;" />
+              <img src="${e.rearImage}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #e0e0e0;" />
             </div>
           `:""}
         </div>
@@ -75,4 +62,4 @@ import{E as v,h as m}from"./index-B_olwNTL.js";async function b(t,n,o,r){var i;c
         <div style="font-size: 9px; color: #999; margin-top: 4px;">この鑑定書は専門検査員による詳細検査に基づいて発行されています</div>
       </div>
     </div>
-  `}export{b as generateInspectionPDF};
+  `}export{h as generateInspectionPDF};

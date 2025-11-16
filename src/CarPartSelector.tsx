@@ -101,10 +101,26 @@ export default function CarPartSelector() {
 
   const saveDefects = (defects: Defect[]) => {
     if (!selectedPart) return;
+    
+    // 2つまで制限 & 重複チェック（同じtype+levelは上書き）
+    const uniqueDefects: Defect[] = [];
+    defects.forEach(newDefect => {
+      const existingIndex = uniqueDefects.findIndex(
+        d => d.type === newDefect.type && d.level === newDefect.level
+      );
+      if (existingIndex >= 0) {
+        // 上書き
+        uniqueDefects[existingIndex] = newDefect;
+      } else if (uniqueDefects.length < 2) {
+        // 2つまで追加
+        uniqueDefects.push(newDefect);
+      }
+    });
+    
     setPartDefects(prev => {
       const filtered = prev.filter(p => p.part !== selectedPart);
-      if (defects.length > 0) {
-        return [...filtered, { part: selectedPart, defects }];
+      if (uniqueDefects.length > 0) {
+        return [...filtered, { part: selectedPart, defects: uniqueDefects }];
       }
       return filtered;
     });
@@ -122,74 +138,17 @@ export default function CarPartSelector() {
   );
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <div style={{ position: 'relative', marginBottom: '20px' }}>
-        <h2 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 700, color: '#1e293b' }}>車両展開図</h2>
-        
-        {/* 入力モード切り替えアイコン（右上のi隣） */}
-        <div style={{
-          position: 'absolute',
-          right: 50,
-          top: 0,
-          display: 'flex',
-          gap: 6
+    <div style={{ padding: '12px 20px', maxWidth: '600px', margin: '0 auto' }}>
+      <div style={{ position: 'relative', marginBottom: '8px' }}>
+        <h2 style={{ 
+          textAlign: 'center', 
+          fontSize: '20px', 
+          fontWeight: 700, 
+          color: '#1e293b',
+          margin: '4px 0 8px 0'
         }}>
-          {/* タップ式アイコン */}
-          <button
-            onClick={() => setInputMode('pattern-a')}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              border: inputMode === 'pattern-a' ? '3px solid #10b981' : '2px solid #e2e8f0',
-              background: inputMode === 'pattern-a' 
-                ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' 
-                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px',
-              transition: 'all 0.2s',
-              boxShadow: inputMode === 'pattern-a' 
-                ? '0 4px 12px rgba(16,185,129,0.3)' 
-                : '0 2px 6px rgba(0,0,0,0.1)'
-            }}
-            title="タップ式入力"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            👆
-          </button>
-          
-          {/* フリック式アイコン */}
-          <button
-            onClick={() => setInputMode('pattern-b')}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              border: inputMode === 'pattern-b' ? '3px solid #3b82f6' : '2px solid #e2e8f0',
-              background: inputMode === 'pattern-b' 
-                ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' 
-                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px',
-              transition: 'all 0.2s',
-              boxShadow: inputMode === 'pattern-b' 
-                ? '0 4px 12px rgba(59,130,246,0.3)' 
-                : '0 2px 6px rgba(0,0,0,0.1)'
-            }}
-            title="フリック式入力"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            👉
-          </button>
-        </div>
+          車両展開図
+        </h2>
         
         {/* 右上のiボタン */}
         <button
@@ -198,13 +157,13 @@ export default function CarPartSelector() {
             position: 'absolute',
             right: 0,
             top: 0,
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             borderRadius: '50%',
             border: '2px solid #64748b',
             background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
             color: '#fff',
-            fontSize: '20px',
+            fontSize: '18px',
             fontWeight: 700,
             cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(100,116,139,0.3)',
@@ -220,15 +179,76 @@ export default function CarPartSelector() {
           ⓘ
         </button>
         
+        {/* 入力モード切り替えアイコン（iボタンの下） */}
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: 42,
+          display: 'flex',
+          gap: 6
+        }}>
+          {/* タップ式アイコン */}
+          <button
+            onClick={() => setInputMode('pattern-a')}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              border: inputMode === 'pattern-a' ? '3px solid #10b981' : '2px solid #e2e8f0',
+              background: inputMode === 'pattern-a' 
+                ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' 
+                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              transition: 'all 0.2s',
+              boxShadow: inputMode === 'pattern-a' 
+                ? '0 4px 12px rgba(16,185,129,0.3)' 
+                : '0 2px 6px rgba(0,0,0,0.1)'
+            }}
+            title="タップ式入力"
+          >
+            👆
+          </button>
+          
+          {/* フリック式アイコン */}
+          <button
+            onClick={() => setInputMode('pattern-b')}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              border: inputMode === 'pattern-b' ? '3px solid #3b82f6' : '2px solid #e2e8f0',
+              background: inputMode === 'pattern-b' 
+                ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' 
+                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              transition: 'all 0.2s',
+              boxShadow: inputMode === 'pattern-b' 
+                ? '0 4px 12px rgba(59,130,246,0.3)' 
+                : '0 2px 6px rgba(0,0,0,0.1)'
+            }}
+            title="フリック式入力"
+          >
+            👉
+          </button>
+        </div>
+        
         {/* 現在の入力モード表示 */}
         <div style={{
           textAlign: 'center',
-          marginTop: 8,
-          fontSize: 13,
+          marginTop: 2,
+          fontSize: 12,
           fontWeight: 600,
           color: inputMode === 'pattern-a' ? '#10b981' : '#3b82f6'
         }}>
-          {inputMode === 'pattern-a' ? '📋 タップ式入力' : '👉 フリック式入力'}
+          {inputMode === 'pattern-a' ? '📋 タップ式' : '👉 フリック式'}
         </div>
       </div>
       
@@ -265,14 +285,15 @@ export default function CarPartSelector() {
             <div style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '16px' }}>
               <strong>👆 タップ式入力:</strong><br/>
               すべての瑕疵タイプとレベルをタップで選択<br/>
-              A1〜A3、U、B、W、S、C、Y、✖✖、脱アト、G<br/><br/>
+              A1〜A3、U、B、W、S、C、Y(割れ)、✖✖、脱アト、G<br/><br/>
               
               <strong>👉 フリック式入力:</strong><br/>
               メイン5種(A,U,B,W,✖✖)をフリックでレベル入力<br/>
               その他4種(Y1,Y2,S1,S2)はタップで即追加
             </div>
             <div style={{ padding: '14px', background: 'rgba(255,255,255,0.2)', borderRadius: '10px', fontSize: '14px', marginBottom: '16px' }}>
-              <strong>💡 ヒント:</strong> 入力済み瑕疵をタップすると削除できます
+              <strong>💡 ヒント:</strong> 入力済み瑕疵をタップすると削除できます<br/>
+              1パネルに2つまで入力可能（同じ瑕疵は上書き）
             </div>
             <div style={{ textAlign: 'center', fontSize: '13px', opacity: 0.9 }}>
               画面をタップして閉じる
@@ -285,7 +306,7 @@ export default function CarPartSelector() {
         data-diagram="car-parts"
         style={{ 
           position: 'relative', 
-          maxWidth: '500px', 
+          maxWidth: '550px',
           margin: '0 auto',
           touchAction: 'manipulation',
           userSelect: 'none'

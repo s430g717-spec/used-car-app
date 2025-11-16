@@ -22,7 +22,7 @@ const ALL_DEFECT_TYPES_WITH_LEVEL = [
   { code: 'W', label: '補修', levels: ['1', '2', '3'] },
   { code: 'S', label: 'サビ', levels: ['1', '2', '3'] },
   { code: 'C', label: '腐食', levels: ['1', '2', '3'] },
-  { code: 'Y', label: 'Y', levels: ['1', '2', '3'] },
+  { code: 'Y', label: '割れ', levels: ['1', '2', '3'] },
 ];
 
 const DEFECT_TYPES_NO_LEVEL = [
@@ -37,7 +37,7 @@ const USS_DEFECT_TYPES = [
   { code: 'U', label: '凹み' },
   { code: 'B', label: 'キズ凹' },
   { code: 'W', label: '補修' },
-  { code: '✖✖', label: '交換', color: '#dc2626' }, // 赤色
+  { code: '✖✖', label: '交換' },
 ];
 
 const OTHER_DEFECT_TYPES = [
@@ -67,6 +67,7 @@ export function DefectInputDialog(props: {
   const [selectingType, setSelectingType] = useState(true);
   const [type, setType] = useState('A');
   const [isTouching, setIsTouching] = useState(false);
+  const [touchingType, setTouchingType] = useState<string | null>(null);
   const [flickDirection, setFlickDirection] = useState<'up' | 'down' | 'left' | 'right' | null>(null);
 
   // フリック用
@@ -76,6 +77,7 @@ export function DefectInputDialog(props: {
   useEffect(() => {
     setSelectingType(true);
     setIsTouching(false);
+    setTouchingType(null);
     setFlickDirection(null);
   }, [existingDefects, open]);
 
@@ -83,7 +85,7 @@ export function DefectInputDialog(props: {
 
   // 追加時に即onConfirmして閉じる
   const quickAdd = (defect: Defect) => {
-    onConfirm([defect]);
+    onConfirm([...existingDefects, defect]);
     onOpenChange(false);
   };
 
@@ -248,6 +250,7 @@ export function DefectInputDialog(props: {
   // パターンB: フリック式（改善版）
   const handleTouchStart = (e: React.TouchEvent, selectedType: string) => {
     setType(selectedType);
+    setTouchingType(selectedType);
     setIsTouching(true);
     setFlickDirection(null);
     startX.current = e.touches[0].clientX;
@@ -270,6 +273,7 @@ export function DefectInputDialog(props: {
 
   const handleTouchEnd = (e: React.TouchEvent, selectedType: string) => {
     setIsTouching(false);
+    setTouchingType(null);
     if (startX.current === null || startY.current === null) return;
     const dx = e.changedTouches[0].clientX - startX.current;
     const dy = e.changedTouches[0].clientY - startY.current;
@@ -359,9 +363,9 @@ export function DefectInputDialog(props: {
 
         {/* メイン瑕疵（大きく表示・フリック入力） */}
         <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>
-          メイン瑕疵（長押ししてフリック）
+          メイン瑕疵（タップしてフリック）
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16, position: 'relative' }}>
           {USS_DEFECT_TYPES.map(opt => (
             <div
               key={opt.code}
@@ -369,26 +373,20 @@ export function DefectInputDialog(props: {
                 position: 'relative',
                 padding: '24px 8px',
                 borderRadius: 12,
-                border: opt.code === '✖✖' 
-                  ? '3px solid #dc2626' 
-                  : isTouching && type === opt.code 
-                    ? '3px solid #2563eb' 
-                    : '2px solid #2563eb',
-                background: opt.code === '✖✖'
-                  ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
-                  : isTouching && type === opt.code 
-                    ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' 
-                    : '#dbeafe',
+                border: isTouching && touchingType === opt.code 
+                  ? '3px solid #2563eb' 
+                  : '2px solid #2563eb',
+                background: '#dbeafe',
                 fontWeight: 700,
                 fontSize: 28,
-                color: opt.code === '✖✖' ? '#dc2626' : '#1e40af',
+                color: '#1e40af',
                 cursor: 'pointer',
                 textAlign: 'center',
                 touchAction: 'none',
                 userSelect: 'none',
                 transition: 'all 0.2s',
-                transform: isTouching && type === opt.code ? 'scale(1.05)' : 'scale(1)',
-                boxShadow: isTouching && type === opt.code 
+                transform: isTouching && touchingType === opt.code ? 'scale(1.05)' : 'scale(1)',
+                boxShadow: isTouching && touchingType === opt.code 
                   ? '0 8px 24px rgba(59,130,246,0.4)' 
                   : '0 2px 8px rgba(0,0,0,0.1)'
               }}
@@ -397,37 +395,39 @@ export function DefectInputDialog(props: {
               onTouchEnd={(e) => handleTouchEnd(e, opt.code)}
               onTouchCancel={() => {
                 setIsTouching(false);
+                setTouchingType(null);
                 setFlickDirection(null);
               }}
             >
               {opt.code}
-              
-              {/* フリック方向インジケーター */}
-              {isTouching && type === opt.code && flickDirection && (
-                <div style={{
-                  position: 'absolute',
-                  top: flickDirection === 'up' ? -30 : flickDirection === 'down' ? 'calc(100% + 10px)' : '50%',
-                  left: flickDirection === 'left' ? -30 : flickDirection === 'right' ? 'calc(100% + 10px)' : '50%',
-                  transform: flickDirection === 'up' || flickDirection === 'down' ? 'translateX(-50%)' : 'translateY(-50%)',
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: '#2563eb',
-                  background: '#fff',
-                  padding: '4px 8px',
-                  borderRadius: 6,
-                  border: '2px solid #2563eb',
-                  whiteSpace: 'nowrap',
-                  zIndex: 10,
-                  animation: 'pulse 0.3s ease-in-out infinite'
-                }}>
-                  {opt.code === '✖✖' ? '脱アト' : 
-                   flickDirection === 'up' ? `${opt.code}1` :
-                   flickDirection === 'down' ? `${opt.code}3` :
-                   `${opt.code}2`}
-                </div>
-              )}
             </div>
           ))}
+          
+          {/* フリック方向インジケーター（画面中央に大きく表示） */}
+          {isTouching && touchingType && flickDirection && (
+            <div style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              fontSize: 56,
+              fontWeight: 900,
+              color: '#fff',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              padding: '32px 48px',
+              borderRadius: 24,
+              border: '4px solid #fff',
+              whiteSpace: 'nowrap',
+              zIndex: 10000,
+              boxShadow: '0 20px 60px rgba(59,130,246,0.6)',
+              animation: 'bigPulse 0.4s ease-in-out infinite'
+            }}>
+              {touchingType === '✖✖' ? '脱アト' : 
+               flickDirection === 'up' ? `${touchingType}1` :
+               flickDirection === 'down' ? `${touchingType}3` :
+               `${touchingType}2`}
+            </div>
+          )}
         </div>
 
         {/* その他瑕疵（小さく表示・タップで即追加） */}
@@ -456,9 +456,15 @@ export function DefectInputDialog(props: {
       </div>
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.1); }
+        @keyframes bigPulse {
+          0%, 100% { 
+            opacity: 1; 
+            transform: translate(-50%, -50%) scale(1); 
+          }
+          50% { 
+            opacity: 0.95; 
+            transform: translate(-50%, -50%) scale(1.05); 
+          }
         }
       `}</style>
     </div>
