@@ -138,6 +138,8 @@ export function Inventory() {
       return;
     }
 
+    const editingItemId = localStorage.getItem('editingItemId');
+    
     try {
       const newItem = {
         storeId: userData.storeId,
@@ -150,11 +152,16 @@ export function Inventory() {
         certifiedBy: null
       };
 
-      console.log('保存するデータ:', newItem);
-
-      await addDoc(collection(db, 'appraisals'), newItem);
-      
-      console.log('Firestore保存成功');
+      if (editingItemId) {
+        // 上書き保存
+        await updateDoc(doc(db, 'appraisals', editingItemId), newItem);
+        localStorage.removeItem('editingItemId');
+        alert('データを更新しました！');
+      } else {
+        // 新規保存
+        await addDoc(collection(db, 'appraisals'), newItem);
+        alert('Firestoreに保存しました！');
+      }
       
       // LocalStorageをクリア
       localStorage.removeItem('carSpec');
@@ -162,11 +169,8 @@ export function Inventory() {
       localStorage.removeItem('partDefects');
       localStorage.removeItem('diagramImage');
       
-      // リストを再取得
       await fetchItems();
-      
       window.dispatchEvent(new Event('storage'));
-      alert('Firestoreに保存しました！');
     } catch (error) {
       console.error('保存エラー:', error);
       alert(`保存に失敗しました: ${error}`);
@@ -189,6 +193,7 @@ export function Inventory() {
       localStorage.setItem('carSpec', JSON.stringify(item.carSpec));
       localStorage.setItem('inspectorReport', JSON.stringify(item.inspectorReport));
       localStorage.setItem('partDefects', JSON.stringify(item.defects));
+      localStorage.setItem('editingItemId', item.id); // IDを保存
       window.dispatchEvent(new Event('storage'));
       alert('データを読み込みました。各入力画面で編集してください。');
     }

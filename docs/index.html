@@ -2,13 +2,70 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- 画面向き固定：縦画面のみ -->
+    <meta name="screen-orientation" content="portrait" />
+    <meta name="x5-orientation" content="portrait" />
+    <meta name="x5-fullscreen" content="true" />
+    
+    <!-- PWA設定 -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="中古車査定" />
+    
     <link rel="icon" type="image/svg+xml" href="/car-icon.svg" />
+    <link rel="apple-touch-icon" href="/car-icon.svg" />
+    
     <title>中古車査定アプリ</title>
-    <script type="module" crossorigin src="/used-car-app/assets/index-Dx24eiJq.js"></script>
+    
+    <style>
+      /* 画面回転を防ぐCSS */
+      @media screen and (orientation: landscape) {
+        body::before {
+          content: "📱 縦画面でご利用ください";
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.95);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          font-weight: bold;
+          z-index: 999999;
+          text-align: center;
+          padding: 20px;
+        }
+        #root {
+          filter: blur(10px);
+          pointer-events: none;
+        }
+      }
+      
+      /* スクロール時のバウンス効果を無効化（iOS） */
+      body {
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
+    <script type="module" crossorigin src="/used-car-app/assets/index-CgOuJbtB.js"></script>
     <link rel="stylesheet" crossorigin href="/used-car-app/assets/index-DqupQDrj.css">
   </head>
   <body>
     <div id="root"></div>
+    
+    <script>
+      // 画面回転をJavaScriptでも制御
+      if (window.screen && window.screen.orientation) {
+        window.screen.orientation.lock('portrait').catch(err => {
+          console.log('画面回転ロック非対応:', err);
+        });
+      }
+    </script>
   </body>
 </html>

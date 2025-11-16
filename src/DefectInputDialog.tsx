@@ -23,10 +23,11 @@ const DEFECT_TYPES_NO_LEVEL = [
   { code: 'G', label: '飛び石' },
 ];
 
-// Fガラス専用瑕疵（GとYのみ）
+// Fガラス専用瑕疵（G・✖・ワレの3つ、レベルなし）
 const FRONT_GLASS_DEFECTS = [
   { code: 'G', label: '飛び石' },
-  { code: 'Y', label: '割れ', levels: ['1', '2', '3'] },
+  { code: '✖', label: 'ヒビ' },
+  { code: 'ワレ', label: 'ワレ' },
 ];
 
 // パターンB: メイン5種 + その他4種
