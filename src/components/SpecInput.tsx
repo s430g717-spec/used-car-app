@@ -9,7 +9,10 @@ export interface CarSpec {
   name: string;
   grade: string;
   chassisNumber: string;
+  chassisPrefix: string; // 車体番号の型式部分
+  chassisSerial: string; // 車体番号のシリアル番号部分
   mileage: string;
+  isImported: boolean; // 輸入車フラグ
   frontImage?: string;
   rearImage?: string;
 }
@@ -37,16 +40,76 @@ const generateYearOptions = () => {
   return years;
 };
 
+// TOYOTA型式末尾補正
+const correctToyotaModel = (model: string): string => {
+  if (!model) return model;
+  
+  const upper = model.toUpperCase();
+  
+  // TOYOTAの型式パターン（例: ZRE212 → ZRE212W, GRS204 → GRS204G）
+  const toyotaPatterns = [
+    { base: /^ZRE\d{3}$/, suffix: 'W' },
+    { base: /^NRE\d{3}$/, suffix: 'W' },
+    { base: /^ZWE\d{3}$/, suffix: 'W' },
+    { base: /^MXAA\d{2}$/, suffix: 'W' },
+    { base: /^GRS\d{3}$/, suffix: 'G' },
+    { base: /^UZS\d{3}$/, suffix: 'G' },
+  ];
+  
+  for (const pattern of toyotaPatterns) {
+    if (pattern.base.test(upper)) {
+      return upper + pattern.suffix;
+    }
+  }
+  
+  return upper;
+};
+
+// 走行距離フォーマット（3桁カンマ）
+const formatMileage = (value: string): string => {
+  const numbers = value.replace(/[^\d]/g, '');
+  if (!numbers) return '';
+  return parseInt(numbers, 10).toLocaleString('ja-JP');
+};
+
+// 走行距離パース（カンマ除去）
+const parseMileage = (value: string): string => {
+  return value.replace(/[^\d]/g, '');
+};
+
 export function SpecInput() {
   const [spec, setSpec] = useState<CarSpec>(() => {
     const saved = localStorage.getItem('carSpec');
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      try {
+        const loaded = JSON.parse(saved);
+        return {
+          year: loaded.year || '',
+          model: loaded.model || '',
+          name: loaded.name || '',
+          grade: loaded.grade || '',
+          chassisNumber: loaded.chassisNumber || '',
+          chassisPrefix: loaded.chassisPrefix || '',
+          chassisSerial: loaded.chassisSerial || '',
+          mileage: loaded.mileage || '',
+          isImported: loaded.isImported || false,
+          frontImage: loaded.frontImage || '',
+          rearImage: loaded.rearImage || ''
+        };
+      } catch (e) {
+        console.error('Failed to load saved spec', e);
+      }
+    }
+    return {
       year: '',
       model: '',
       name: '',
       grade: '',
       chassisNumber: '',
+      chassisPrefix: '',
+      chassisSerial: '',
       mileage: '',
+      isImported: false,
       frontImage: '',
       rearImage: ''
     };
@@ -73,19 +136,93 @@ export function SpecInput() {
     return searchCarNamesByModel(baseModel);
   }, [spec.model]);
   
-  // 型式からグレード候補を取得
+  // 型式+車体番号からグレード候補を取得
   const gradeOptions = useMemo(() => {
-    return getGradeOptions(spec.model);
-  }, [spec.model]);
+    if (!spec.model) return [];
+    const options = getGradeOptions(spec.model);
+    
+    // 車体番号がある場合はさらに絞り込み
+    if (spec.chassisNumber && options.length > 1) {
+      const inferredGrade = inferGradeFromChassis(spec.model, spec.chassisNumber);
+      if (inferredGrade) {
+        // 推測されたグレードを最初に配置
+        return [inferredGrade.grade, ...options.filter(g => g !== inferredGrade.grade)];
+      }
+    }
+    
+    return options;
+  }, [spec.model, spec.chassisNumber]);
 
   const handleInput = (key: keyof CarSpec, value: string) => {
-    const newSpec = { ...spec, [key]: value };
+    const newSpec = { ...spec };
+    
+    if (key === 'model') {
+      // 型式入力時に大文字変換 + TOYOTA補正
+      const corrected = correctToyotaModel(value);
+      newSpec.model = corrected;
+      
+      // 型式が変更されたら車体番号のプレフィックスにも反映
+      if (!spec.isImported) {
+        newSpec.chassisPrefix = corrected;
+        newSpec.chassisNumber = corrected + (spec.chassisSerial ? '-' + spec.chassisSerial : '');
+      }
+    } else if (key === 'chassisPrefix') {
+      // 車体番号の型式部分が変更されたら型式入力にも反映
+      const upper = value.toUpperCase();
+      newSpec.chassisPrefix = upper;
+      newSpec.model = upper;
+      
+      if (!spec.isImported) {
+        newSpec.chassisNumber = upper + (spec.chassisSerial ? '-' + spec.chassisSerial : '');
+      }
+    } else if (key === 'chassisSerial') {
+      // 車体番号のシリアル番号部分
+      const upper = value.toUpperCase();
+      newSpec.chassisSerial = upper;
+      
+      if (spec.isImported) {
+        newSpec.chassisNumber = (spec.chassisPrefix + upper).slice(0, 17);
+      } else {
+        newSpec.chassisNumber = spec.chassisPrefix + (upper ? '-' + upper : '');
+      }
+    } else if (key === 'chassisNumber' && spec.isImported) {
+      // 輸入車の場合は17桁で分割なし
+      const upper = value.toUpperCase().slice(0, 17);
+      newSpec.chassisNumber = upper;
+      newSpec.chassisPrefix = upper.slice(0, 11);
+      newSpec.chassisSerial = upper.slice(11);
+    } else if (key === 'mileage') {
+      // 走行距離は数字のみ保存、表示時にフォーマット
+      newSpec.mileage = parseMileage(value);
+    } else {
+      newSpec[key] = value as any;
+    }
     
     // 車体番号入力時にグレードを自動推測
-    if (key === 'chassisNumber' && value && newSpec.model) {
-      const inferredGrade = inferGradeFromChassis(newSpec.model, value);
+    if ((key === 'chassisSerial' || key === 'chassisNumber') && newSpec.chassisNumber && newSpec.model) {
+      const inferredGrade = inferGradeFromChassis(newSpec.model, newSpec.chassisNumber);
       if (inferredGrade && !newSpec.grade) {
         newSpec.grade = inferredGrade.grade;
+      }
+    }
+    
+    setSpec(newSpec);
+  };
+
+  // 輸入車切り替え
+  const toggleImported = () => {
+    const newSpec = { ...spec, isImported: !spec.isImported };
+    
+    if (newSpec.isImported) {
+      // 輸入車モード: ハイフンなし17桁
+      newSpec.chassisNumber = (spec.chassisPrefix + spec.chassisSerial).replace(/-/g, '').slice(0, 17);
+      newSpec.chassisPrefix = newSpec.chassisNumber.slice(0, 11);
+      newSpec.chassisSerial = newSpec.chassisNumber.slice(11);
+    } else {
+      // 国産車モード: 型式-シリアル番号
+      if (spec.model) {
+        newSpec.chassisPrefix = spec.model;
+        newSpec.chassisNumber = spec.model + (spec.chassisSerial ? '-' + spec.chassisSerial : '');
       }
     }
     
@@ -100,7 +237,10 @@ export function SpecInput() {
         name: '',
         grade: '',
         chassisNumber: '',
+        chassisPrefix: '',
+        chassisSerial: '',
         mileage: '',
+        isImported: false,
         frontImage: '',
         rearImage: ''
       };
@@ -109,7 +249,7 @@ export function SpecInput() {
     }
   };
 
-  // OCR処理（グレード推測を追加）
+  // OCR処理
   const processOCR = async (imageFile: File | Blob) => {
     setIsProcessing(true);
     setOcrProgress(0);
@@ -203,8 +343,9 @@ export function SpecInput() {
           let fullModel = match[1].replace(/\s/g, '').toUpperCase();
           detectedModel = fullModel.replace(/^[A-Z]{3}-/, '');
           if (detectedModel.length >= 4) {
-            setSpec(prev => ({ ...prev, model: detectedModel }));
-            console.log('検出された型式:', detectedModel);
+            const corrected = correctToyotaModel(detectedModel);
+            handleInput('model', corrected);
+            console.log('検出された型式:', corrected);
             break;
           }
         }
@@ -222,30 +363,25 @@ export function SpecInput() {
         if (match) {
           detectedChassis = match[1].replace(/\s/g, '').toUpperCase();
           if (detectedChassis.length >= 8) {
-            setSpec(prev => ({ ...prev, chassisNumber: detectedChassis }));
+            const parts = detectedChassis.split('-');
+            if (parts.length === 2) {
+              handleInput('chassisPrefix', parts[0]);
+              handleInput('chassisSerial', parts[1]);
+            }
             console.log('検出された車体番号:', detectedChassis);
             break;
           }
         }
       }
 
-      // グレードを推測
-      if (detectedModel && detectedChassis) {
-        const gradeInfo = inferGradeFromChassis(detectedModel, detectedChassis);
-        if (gradeInfo) {
-          setSpec(prev => ({ ...prev, grade: gradeInfo.grade }));
-          console.log(`グレード推測: ${gradeInfo.grade}`);
-        }
-      }
-
       if (detectedModel || detectedChassis) {
-        alert(`文字認識が完了しました！\n\n検出内容:\n型式: ${detectedModel || '未検出'}\n車体番号: ${detectedChassis || '未検出'}\n\n内容を確認して、必要に応じて修正してください。`);
+        alert(`文字認識が完了しました！\n\n検出内容:\n型式: ${detectedModel || '未検出'}\n車体番号: ${detectedChassis || '未検出'}`);
       } else {
-        alert('型式・車体番号を認識できませんでした。\n\n【撮影のコツ】\n・プレートに正面から近づく\n・明るい場所で撮影\n・影が入らないように\n・文字がはっきり見える距離\n\n何度か試しても認識しない場合は、手動入力をご利用ください。');
+        alert('型式・車体番号を認識できませんでした。手動入力をご利用ください。');
       }
     } catch (error) {
       console.error('OCR処理エラー:', error);
-      alert('文字認識に失敗しました。\n\n別の写真で再度お試しいただくか、手動入力をご利用ください。');
+      alert('文字認識に失敗しました。');
     } finally {
       setIsProcessing(false);
       setOcrProgress(0);
@@ -560,7 +696,7 @@ export function SpecInput() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* 年式（プルダウン） */}
+          {/* 年式 */}
           <div>
             <label style={{
               display: 'block',
@@ -581,13 +717,10 @@ export function SpecInput() {
                 borderRadius: 8,
                 border: '2px solid #e2e8f0',
                 outline: 'none',
-                transition: 'border-color 0.15s',
                 boxSizing: 'border-box',
                 background: '#fff',
                 cursor: 'pointer'
               }}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
             >
               <option value="">-- 年式を選択 --</option>
               {yearOptions.map(option => (
@@ -614,16 +747,15 @@ export function SpecInput() {
                 fontWeight: 400,
                 color: '#94a3b8'
               }}>
-                （排ガス記号なし）
+                （排ガス記号なし、自動で大文字変換）
               </span>
             </label>
             <input
               type="text"
               inputMode="text"
-              pattern="[A-Z0-9-]*"
               value={spec.model}
-              onChange={(e) => handleInput('model', e.target.value.toUpperCase())}
-              placeholder="例: ZRE212"
+              onChange={(e) => handleInput('model', e.target.value)}
+              placeholder="例: ZRE212W"
               style={{
                 width: '100%',
                 fontSize: 16,
@@ -631,16 +763,13 @@ export function SpecInput() {
                 borderRadius: 8,
                 border: '2px solid #e2e8f0',
                 outline: 'none',
-                transition: 'border-color 0.15s',
                 boxSizing: 'border-box',
                 textTransform: 'uppercase'
               }}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
             />
           </div>
 
-          {/* 車名（型式から候補表示） */}
+          {/* 車名 */}
           <div>
             <label style={{
               display: 'block',
@@ -663,54 +792,28 @@ export function SpecInput() {
             </label>
             
             {carNameSuggestions.length > 0 ? (
-              <>
-                <select
-                  value={spec.name}
-                  onChange={(e) => handleInput('name', e.target.value)}
-                  style={{
-                    width: '100%',
-                    fontSize: 16,
-                    padding: '12px 14px',
-                    borderRadius: 8,
-                    border: '2px solid #bfdbfe',
-                    outline: 'none',
-                    transition: 'border-color 0.15s',
-                    boxSizing: 'border-box',
-                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                    cursor: 'pointer'
-                  }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.currentTarget.style.borderColor = '#bfdbfe'}
-                >
-                  <option value="">-- 車名を選択 --</option>
-                  {carNameSuggestions.map(name => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                  <option value="__manual__">手動入力...</option>
-                </select>
-                
-                {spec.name === '__manual__' && (
-                  <input
-                    type="text"
-                    value=""
-                    onChange={(e) => handleInput('name', e.target.value)}
-                    placeholder="車名を入力してください"
-                    autoFocus
-                    style={{
-                      width: '100%',
-                      fontSize: 16,
-                      padding: '12px 14px',
-                      borderRadius: 8,
-                      border: '2px solid #e2e8f0',
-                      outline: 'none',
-                      marginTop: 8,
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                )}
-              </>
+              <select
+                value={spec.name}
+                onChange={(e) => handleInput('name', e.target.value)}
+                style={{
+                  width: '100%',
+                  fontSize: 16,
+                  padding: '12px 14px',
+                  borderRadius: 8,
+                  border: '2px solid #bfdbfe',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">-- 車名を選択 --</option>
+                {carNameSuggestions.map(name => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             ) : (
               <input
                 type="text"
@@ -724,22 +827,9 @@ export function SpecInput() {
                   borderRadius: 8,
                   border: '2px solid #e2e8f0',
                   outline: 'none',
-                  transition: 'border-color 0.15s',
                   boxSizing: 'border-box'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
               />
-            )}
-            
-            {carNameSuggestions.length === 0 && spec.model && (
-              <div style={{
-                marginTop: 6,
-                fontSize: 11,
-                color: '#64748b'
-              }}>
-                ※ 輸入車または型式が未登録です。手動で入力してください。
-              </div>
             )}
           </div>
 
@@ -753,7 +843,7 @@ export function SpecInput() {
               marginBottom: 6
             }}>
               グレード
-              {spec.model && gradeOptions.length > 0 && (
+              {spec.chassisNumber && gradeOptions.length > 0 && (
                 <span style={{
                   marginLeft: 8,
                   fontSize: 12,
@@ -774,15 +864,12 @@ export function SpecInput() {
                   fontSize: 16,
                   padding: '12px 14px',
                   borderRadius: 8,
-                  border: '2px solid #a7f3d0',
+                  border: spec.chassisNumber ? '2px solid #a7f3d0' : '2px solid #e2e8f0',
                   outline: 'none',
-                  transition: 'border-color 0.15s',
                   boxSizing: 'border-box',
-                  background: 'linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%)',
+                  background: spec.chassisNumber ? 'linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%)' : '#fff',
                   cursor: 'pointer'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#10b981'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#a7f3d0'}
               >
                 <option value="">-- グレードを選択 --</option>
                 {gradeOptions.map(grade => (
@@ -790,7 +877,6 @@ export function SpecInput() {
                     {grade}
                   </option>
                 ))}
-                <option value="__manual__">手動入力...</option>
               </select>
             ) : (
               <input
@@ -805,47 +891,128 @@ export function SpecInput() {
                   borderRadius: 8,
                   border: '2px solid #e2e8f0',
                   outline: 'none',
-                  transition: 'border-color 0.15s',
                   boxSizing: 'border-box'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
               />
             )}
           </div>
 
           {/* 車体番号 */}
           <div>
-            <label style={{
-              display: 'block',
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#475569',
-              marginBottom: 6
-            }}>
-              車体番号
-            </label>
-            <input
-              type="text"
-              inputMode="text"
-              pattern="[A-Z0-9-]*"
-              value={spec.chassisNumber}
-              onChange={(e) => handleInput('chassisNumber', e.target.value.toUpperCase())}
-              placeholder="例: ABC-1234567"
-              style={{
-                width: '100%',
-                fontSize: 16,
-                padding: '12px 14px',
-                borderRadius: 8,
-                border: '2px solid #e2e8f0',
-                outline: 'none',
-                transition: 'border-color 0.15s',
-                boxSizing: 'border-box',
-                textTransform: 'uppercase'
-              }}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <label style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: '#475569'
+              }}>
+                車体番号
+              </label>
+              <button
+                onClick={toggleImported}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  border: spec.isImported ? '2px solid #f59e0b' : '2px solid #e2e8f0',
+                  background: spec.isImported ? '#fef3c7' : '#fff',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: spec.isImported ? '#92400e' : '#64748b',
+                  cursor: 'pointer'
+                }}
+              >
+                {spec.isImported ? '🌍 輸入車' : '🇯🇵 国産車'}
+              </button>
+            </div>
+
+            {spec.isImported ? (
+              // 輸入車: 17桁連続入力
+              <input
+                type="text"
+                inputMode="text"
+                value={spec.chassisNumber}
+                onChange={(e) => handleInput('chassisNumber', e.target.value)}
+                placeholder="17桁のVIN (例: JTHBK1GG8E2012345)"
+                maxLength={17}
+                style={{
+                  width: '100%',
+                  fontSize: 16,
+                  padding: '12px 14px',
+                  borderRadius: 8,
+                  border: '2px solid #fcd34d',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  textTransform: 'uppercase',
+                  background: '#fef3c7',
+                  fontFamily: 'monospace',
+                  letterSpacing: '1px'
+                }}
+              />
+            ) : (
+              // 国産車: 型式 - シリアル番号
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>型式部分</div>
+                  <input
+                    type="text"
+                    inputMode="text"
+                    value={spec.chassisPrefix}
+                    onChange={(e) => handleInput('chassisPrefix', e.target.value)}
+                    placeholder="例: ZRE212W"
+                    style={{
+                      width: '100%',
+                      fontSize: 16,
+                      padding: '12px 14px',
+                      borderRadius: 8,
+                      border: '2px solid #e2e8f0',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      textTransform: 'uppercase'
+                    }}
+                  />
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'flex-end', 
+                  paddingBottom: 12, 
+                  fontSize: 20, 
+                  fontWeight: 700, 
+                  color: '#94a3b8' 
+                }}>
+                  -
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>シリアル番号</div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={spec.chassisSerial}
+                    onChange={(e) => handleInput('chassisSerial', e.target.value)}
+                    placeholder="例: 1234567"
+                    style={{
+                      width: '100%',
+                      fontSize: 16,
+                      padding: '12px 14px',
+                      borderRadius: 8,
+                      border: '2px solid #e2e8f0',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      textTransform: 'uppercase'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {!spec.isImported && spec.chassisNumber && (
+              <div style={{
+                marginTop: 6,
+                fontSize: 12,
+                color: '#64748b',
+                fontFamily: 'monospace'
+              }}>
+                完全な車体番号: {spec.chassisNumber}
+              </div>
+            )}
           </div>
 
           {/* 走行距離 */}
@@ -860,11 +1027,11 @@ export function SpecInput() {
               走行距離 (km)
             </label>
             <input
-              type="number"
+              type="text"
               inputMode="numeric"
-              value={spec.mileage}
+              value={formatMileage(spec.mileage)}
               onChange={(e) => handleInput('mileage', e.target.value)}
-              placeholder="例: 50000"
+              placeholder="例: 50,000"
               style={{
                 width: '100%',
                 fontSize: 16,
@@ -872,11 +1039,8 @@ export function SpecInput() {
                 borderRadius: 8,
                 border: '2px solid #e2e8f0',
                 outline: 'none',
-                transition: 'border-color 0.15s',
                 boxSizing: 'border-box'
               }}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
             />
           </div>
         </div>

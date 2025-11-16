@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface InspectorReportData {
   content: string;
@@ -19,14 +19,18 @@ export function InspectorReport() {
     return { content: '', overallRating: '', interiorRating: '' };
   });
 
-  // 瑕疵データを取得
   const [partDefects, setPartDefects] = useState<any[]>(() => {
     const saved = localStorage.getItem('partDefects');
     return saved ? JSON.parse(saved) : [];
   });
 
+  // 自動保存機能（変更のたびに保存）
+  useEffect(() => {
+    localStorage.setItem('inspectorReport', JSON.stringify(report));
+  }, [report]);
+
   // partDefects の変更を監視
-  React.useEffect(() => {
+  useEffect(() => {
     const handleStorageChange = () => {
       const saved = localStorage.getItem('partDefects');
       if (saved) {
@@ -43,11 +47,6 @@ export function InspectorReport() {
     };
   }, []);
 
-  const handleRegister = () => {
-    localStorage.setItem('inspectorReport', JSON.stringify(report));
-    alert('検査員報告を保存しました。在庫管理画面で登録してください。');
-  };
-
   const handleClear = () => {
     if (confirm('入力内容をクリアしますか？')) {
       const emptyReport = { content: '', overallRating: '', interiorRating: '' };
@@ -55,8 +54,6 @@ export function InspectorReport() {
       localStorage.setItem('inspectorReport', JSON.stringify(emptyReport));
     }
   };
-
-  const charCount = report.content.length;
 
   // 諸元データを取得
   const [carSpec, setCarSpec] = React.useState<any>(() => {
@@ -91,27 +88,19 @@ export function InspectorReport() {
       });
     });
 
-    // レベルなしのA（キズ）の数
     const levellessA = allDefects.filter(d => d.type === 'A' && !d.level).length;
-    
-    // レベル1（E1相当）の数
     const level1Count = allDefects.filter(d => d.level === '1').length;
-    
-    // レベル2（E2相当）の数
     const level2Count = allDefects.filter(d => d.level === '2').length;
-    
-    // レベル1を持つパネル数
     const level1Panels = new Set(
       allDefects.filter(d => d.level === '1').map(d => d.part)
     ).size;
 
-    // 走行距離による上限
     const mileage = parseInt(carSpec.mileage || '0', 10);
     let mileageMaxRating = 6;
     let mileageReason = '';
     
     if (mileage < 10000) {
-      mileageMaxRating = 7; // S点許可（瑕疵なしなら）
+      mileageMaxRating = 7;
       mileageReason = '10,000km未満';
     } else if (mileage < 30000) {
       mileageMaxRating = 6;
@@ -130,7 +119,6 @@ export function InspectorReport() {
       mileageReason = '150,000km以上';
     }
 
-    // 内装評価による上限
     const interior = report.interiorRating || '';
     let interiorMaxRating = 6;
     let interiorReason = '';
@@ -149,12 +137,11 @@ export function InspectorReport() {
       interiorReason = '内装Eランク';
     }
 
-    // 瑕疵による基準点
     let defectRating = 6;
     let defectReason = '';
     
     if (levellessA === 0 && level1Count === 0 && level2Count === 0) {
-      defectRating = 7; // S点候補（瑕疵なし）
+      defectRating = 7;
       defectReason = '瑕疵なし';
     } else if (levellessA <= 1 && level1Count === 0 && level2Count === 0) {
       defectRating = 6;
@@ -170,15 +157,12 @@ export function InspectorReport() {
       defectReason = '上記基準を超過';
     }
 
-    // 最終評価は最も厳しい制限を適用
     const finalRating = Math.min(defectRating, mileageMaxRating, interiorMaxRating);
     
-    // S点の判定（瑕疵なし + 走行距離10,000km未満 + 内装A）
     if (defectRating === 7 && mileageMaxRating === 7 && (interior === 'A' || interior === '')) {
       return 'S点 （新古車相当：瑕疵なし、走行10,000km未満、内装A）';
     }
     
-    // 理由の組み立て
     const reasons: string[] = [];
     if (defectRating === finalRating) reasons.push(defectReason);
     if (mileageMaxRating === finalRating && mileageReason) reasons.push(mileageReason);
@@ -197,6 +181,25 @@ export function InspectorReport() {
         <p style={{ fontSize: 13, color: '#64748b', textAlign: 'center', marginBottom: 16 }}>
           車両の検査結果を自由に入力してください
         </p>
+
+        {/* 自動保存表示 */}
+        <div style={{
+          marginBottom: 16,
+          padding: 10,
+          background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+          borderRadius: 8,
+          textAlign: 'center',
+          fontSize: 13,
+          fontWeight: 600,
+          color: '#065f46',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6
+        }}>
+          <span>✓</span>
+          <span>自動保存中</span>
+        </div>
 
         <div style={{ marginBottom: 12, padding: 12, background: '#dbeafe', borderRadius: 8 }}>
           <div style={{ fontSize: 12, color: '#1e40af', fontWeight: 600, marginBottom: 4 }}>
@@ -271,7 +274,7 @@ export function InspectorReport() {
         <div style={{ marginTop: 20 }}>
           <textarea
             value={report.content}
-            onChange={(e) => setReport({ content: e.target.value })}
+            onChange={(e) => setReport({ ...report, content: e.target.value })}
             placeholder="検査結果、コメント、特記事項などを自由に入力してください..."
             rows={15}
             style={{
@@ -308,26 +311,6 @@ export function InspectorReport() {
             }}
           >
             クリア
-          </button>
-          <button
-            onClick={handleRegister}
-            style={{
-              flex: 2,
-              padding: 14,
-              borderRadius: 8,
-              border: 'none',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              fontSize: 16,
-              fontWeight: 700,
-              color: '#fff',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-              transition: 'transform 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            💾 報告を登録
           </button>
         </div>
       </div>

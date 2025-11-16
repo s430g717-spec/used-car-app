@@ -6,14 +6,6 @@ export interface Defect {
   note?: string;
 }
 
-export interface CarSpec {
-  year: string;
-  model: string;
-  name: string;
-  mileage: string;
-  [key: string]: string;
-}
-
 // パターンA: すべての瑕疵タイプ（レベル付き）
 const ALL_DEFECT_TYPES_WITH_LEVEL = [
   { code: 'A', label: 'キズ', levels: ['1', '2', '3'] },
@@ -29,6 +21,12 @@ const DEFECT_TYPES_NO_LEVEL = [
   { code: '✖✖', label: '交換' },
   { code: '脱アト', label: '脱アト' },
   { code: 'G', label: '飛び石' },
+];
+
+// Fガラス専用瑕疵（GとYのみ）
+const FRONT_GLASS_DEFECTS = [
+  { code: 'G', label: '飛び石' },
+  { code: 'Y', label: '割れ', levels: ['1', '2', '3'] },
 ];
 
 // パターンB: メイン5種 + その他4種
@@ -59,20 +57,23 @@ export function DefectInputDialog(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   partName: string;
+  partId: string;
   existingDefects: Defect[];
   onConfirm: (defects: Defect[]) => void;
   inputMode: 'pattern-a' | 'pattern-b';
 }) {
-  const { open, onOpenChange, partName, existingDefects, onConfirm, inputMode } = props;
+  const { open, onOpenChange, partName, partId, existingDefects, onConfirm, inputMode } = props;
   const [selectingType, setSelectingType] = useState(true);
   const [type, setType] = useState('A');
   const [isTouching, setIsTouching] = useState(false);
   const [touchingType, setTouchingType] = useState<string | null>(null);
   const [flickDirection, setFlickDirection] = useState<'up' | 'down' | 'left' | 'right' | null>(null);
 
-  // フリック用
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
+
+  // Fガラスかどうか
+  const isFrontGlass = partId === 'front-glass';
 
   useEffect(() => {
     setSelectingType(true);
@@ -95,7 +96,249 @@ export function DefectInputDialog(props: {
     onConfirm(newDefects);
   };
 
-  // パターンA: タップ式
+  // Fガラス専用UI（パターンA）
+  if (isFrontGlass && inputMode === 'pattern-a') {
+    return (
+      <div
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 9999
+        }}
+        onClick={() => onOpenChange(false)}
+      >
+        <div
+          style={{ 
+            width: 380, 
+            maxHeight: '90vh',
+            overflow: 'auto',
+            background: '#fff', 
+            borderRadius: 12, 
+            padding: 20 
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16, textAlign: 'center' }}>
+            {partName}
+          </div>
+
+          {/* 既存の瑕疵表示（タップで削除） */}
+          {existingDefects.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                入力済み瑕疵（タップで削除）
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {existingDefects.map((d, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleDeleteDefect(i)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      border: '2px solid #ef4444',
+                      background: '#fee2e2',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: '#dc2626',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {d.type}{d.level || ''} ✕
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {selectingType ? (
+            <>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>
+                Fガラス専用瑕疵
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                {FRONT_GLASS_DEFECTS.map(opt => (
+                  opt.levels ? (
+                    <button
+                      key={opt.code}
+                      onClick={() => { setType(opt.code); setSelectingType(false); }}
+                      style={{
+                        flex: 1,
+                        padding: '14px',
+                        borderRadius: 8,
+                        border: '2px solid #2563eb',
+                        background: '#dbeafe',
+                        fontWeight: 700,
+                        fontSize: 16,
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {opt.code} ({opt.label})
+                    </button>
+                  ) : (
+                    <button
+                      key={opt.code}
+                      onClick={() => quickAdd({ type: opt.code })}
+                      style={{
+                        flex: 1,
+                        padding: '14px',
+                        borderRadius: 8,
+                        border: '2px solid #94a3b8',
+                        background: '#f1f5f9',
+                        fontWeight: 700,
+                        fontSize: 16,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {opt.code}
+                    </button>
+                  )
+                ))}
+              </div>
+            </>
+          ) : (
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+                {type} のレベルを選択
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+                {['1', '2', '3'].map(lv => (
+                  <button
+                    key={lv}
+                    onClick={() => quickAdd({ type, level: lv })}
+                    style={{
+                      padding: '16px',
+                      borderRadius: 8,
+                      border: '2px solid #10b981',
+                      background: '#d1fae5',
+                      fontWeight: 700,
+                      fontSize: 20,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {type}{lv}
+                  </button>
+                ))}
+              </div>
+              <button 
+                onClick={() => setSelectingType(true)} 
+                style={{ 
+                  width: '100%', 
+                  padding: 10, 
+                  borderRadius: 8, 
+                  border: '1px solid #cbd5e1', 
+                  background: '#f8fafc',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                ← 戻る
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Fガラス専用UI（パターンB）
+  if (isFrontGlass && inputMode === 'pattern-b') {
+    return (
+      <div
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 9999
+        }}
+        onClick={() => onOpenChange(false)}
+      >
+        <div
+          style={{ 
+            width: 380, 
+            maxHeight: '90vh',
+            overflow: 'auto',
+            background: '#fff', 
+            borderRadius: 12, 
+            padding: 20 
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16, textAlign: 'center' }}>
+            {partName}
+          </div>
+
+          {/* 既存の瑕疵表示（タップで削除） */}
+          {existingDefects.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                入力済み瑕疵（タップで削除）
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {existingDefects.map((d, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleDeleteDefect(i)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      border: '2px solid #ef4444',
+                      background: '#fee2e2',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: '#dc2626',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {d.type}{d.level || ''} ✕
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>
+            Fガラス専用瑕疵
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => quickAdd({ type: 'G' })}
+              style={{
+                flex: 1,
+                padding: '18px 12px',
+                borderRadius: 8,
+                border: '2px solid #2563eb',
+                background: '#dbeafe',
+                fontWeight: 700,
+                fontSize: 20,
+                cursor: 'pointer'
+              }}
+            >
+              G（飛び石）
+            </button>
+            {['Y1', 'Y2', 'Y3'].map(y => (
+              <button
+                key={y}
+                onClick={() => quickAdd({ type: 'Y', level: y.replace('Y', '') })}
+                style={{
+                  flex: 1,
+                  padding: '18px 8px',
+                  borderRadius: 8,
+                  border: '1.5px solid #94a3b8',
+                  background: '#f1f5f9',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  cursor: 'pointer'
+                }}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // パターンA: タップ式（通常）
   if (inputMode === 'pattern-a') {
     return (
       <div
@@ -151,7 +394,6 @@ export function DefectInputDialog(props: {
 
           {selectingType ? (
             <>
-              {/* レベル付き瑕疵 */}
               <div style={{ fontSize: 14, fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>
                 瑕疵タイプ
               </div>
@@ -176,7 +418,6 @@ export function DefectInputDialog(props: {
                 ))}
               </div>
 
-              {/* レベルなし瑕疵 */}
               <div style={{ fontSize: 14, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
                 その他
               </div>
@@ -188,11 +429,10 @@ export function DefectInputDialog(props: {
                     style={{
                       padding: '12px 16px',
                       borderRadius: 8,
-                      border: opt.code === '✖✖' ? '2px solid #dc2626' : '2px solid #94a3b8',
-                      background: opt.code === '✖✖' ? '#fee2e2' : '#f1f5f9',
+                      border: '2px solid #94a3b8',
+                      background: '#f1f5f9',
                       fontWeight: 700,
                       fontSize: 16,
-                      color: opt.code === '✖✖' ? '#dc2626' : '#1e293b',
                       cursor: 'pointer'
                     }}
                   >
@@ -202,7 +442,6 @@ export function DefectInputDialog(props: {
               </div>
             </>
           ) : (
-            // レベル選択
             <div>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
                 {type} のレベルを選択
@@ -247,7 +486,7 @@ export function DefectInputDialog(props: {
     );
   }
 
-  // パターンB: フリック式（改善版）
+  // パターンB: フリック式（通常）
   const handleTouchStart = (e: React.TouchEvent, selectedType: string) => {
     setType(selectedType);
     setTouchingType(selectedType);
@@ -280,7 +519,6 @@ export function DefectInputDialog(props: {
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
 
-    // ✖✖はどの方向でも「脱アト」
     if (selectedType === '✖✖') {
       if (absX > 30 || absY > 30) {
         quickAdd({ type: '✖✖', note: '脱アト' });
@@ -293,13 +531,12 @@ export function DefectInputDialog(props: {
       return;
     }
 
-    // メイン瑕疵のフリック入力
     if (LEVEL_LABELS[selectedType]) {
       let levelIdx = 0;
-      if (absY > absX && dy < -30) levelIdx = 1; // 上
-      else if (absX > absY && dx < -30) levelIdx = 2; // 左
-      else if (absX > absY && dx > 30) levelIdx = 2; // 右
-      else if (absY > absX && dy > 30) levelIdx = 3; // 下
+      if (absY > absX && dy < -30) levelIdx = 1;
+      else if (absX > absY && dx < -30) levelIdx = 2;
+      else if (absX > absY && dx > 30) levelIdx = 2;
+      else if (absY > absX && dy > 30) levelIdx = 3;
 
       const label = LEVEL_LABELS[selectedType][levelIdx] || selectedType;
       quickAdd({ type: selectedType, level: label.replace(selectedType, '') });
@@ -361,7 +598,6 @@ export function DefectInputDialog(props: {
           </div>
         )}
 
-        {/* メイン瑕疵（大きく表示・フリック入力） */}
         <div style={{ fontSize: 13, fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>
           メイン瑕疵（タップしてフリック）
         </div>

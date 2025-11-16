@@ -76,7 +76,6 @@ export default function CarPartSelector() {
           });
           const imageData = canvas.toDataURL('image/png');
           localStorage.setItem('diagramImage', imageData);
-          console.log('展開図をキャプチャしてLocalStorageに保存しました');
         } catch (error) {
           console.error('展開図キャプチャエラー:', error);
         }
@@ -102,17 +101,14 @@ export default function CarPartSelector() {
   const saveDefects = (defects: Defect[]) => {
     if (!selectedPart) return;
     
-    // 2つまで制限 & 重複チェック（同じtype+levelは上書き）
     const uniqueDefects: Defect[] = [];
     defects.forEach(newDefect => {
       const existingIndex = uniqueDefects.findIndex(
         d => d.type === newDefect.type && d.level === newDefect.level
       );
       if (existingIndex >= 0) {
-        // 上書き
         uniqueDefects[existingIndex] = newDefect;
       } else if (uniqueDefects.length < 2) {
-        // 2つまで追加
         uniqueDefects.push(newDefect);
       }
     });
@@ -139,24 +135,50 @@ export default function CarPartSelector() {
 
   return (
     <div style={{ padding: '12px 20px', maxWidth: '600px', margin: '0 auto' }}>
-      <div style={{ position: 'relative', marginBottom: '8px' }}>
+      {/* 左上に切り替えボタンを配置 */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 12
+      }}>
+        {/* 切り替えボタン（左） */}
+        <button
+          onClick={() => setInputMode(inputMode === 'pattern-a' ? 'pattern-b' : 'pattern-a')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 8,
+            border: '2px solid #3b82f6',
+            background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+            fontSize: 13,
+            fontWeight: 700,
+            color: '#1e40af',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {inputMode === 'pattern-a' ? '👆 タップ式' : '👉 フリック式'}
+        </button>
+
+        {/* タイトル（中央） */}
         <h2 style={{ 
+          flex: 1,
           textAlign: 'center', 
           fontSize: '20px', 
           fontWeight: 700, 
           color: '#1e293b',
-          margin: '4px 0 8px 0'
+          margin: 0
         }}>
           車両展開図
         </h2>
         
-        {/* 右上のiボタン */}
+        {/* iボタン（右） */}
         <button
           onClick={() => setShowInfoModal(true)}
           style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
             width: 36,
             height: 36,
             borderRadius: '50%',
@@ -170,86 +192,11 @@ export default function CarPartSelector() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'transform 0.2s'
+            flexShrink: 0
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'
-          }
         >
           ⓘ
         </button>
-        
-        {/* 入力モード切り替えアイコン（iボタンの下） */}
-        <div style={{
-          position: 'absolute',
-          right: 0,
-          top: 42,
-          display: 'flex',
-          gap: 6
-        }}>
-          {/* タップ式アイコン */}
-          <button
-            onClick={() => setInputMode('pattern-a')}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              border: inputMode === 'pattern-a' ? '3px solid #10b981' : '2px solid #e2e8f0',
-              background: inputMode === 'pattern-a' 
-                ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' 
-                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              transition: 'all 0.2s',
-              boxShadow: inputMode === 'pattern-a' 
-                ? '0 4px 12px rgba(16,185,129,0.3)' 
-                : '0 2px 6px rgba(0,0,0,0.1)'
-            }}
-            title="タップ式入力"
-          >
-            👆
-          </button>
-          
-          {/* フリック式アイコン */}
-          <button
-            onClick={() => setInputMode('pattern-b')}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              border: inputMode === 'pattern-b' ? '3px solid #3b82f6' : '2px solid #e2e8f0',
-              background: inputMode === 'pattern-b' 
-                ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' 
-                : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              transition: 'all 0.2s',
-              boxShadow: inputMode === 'pattern-b' 
-                ? '0 4px 12px rgba(59,130,246,0.3)' 
-                : '0 2px 6px rgba(0,0,0,0.1)'
-            }}
-            title="フリック式入力"
-          >
-            👉
-          </button>
-        </div>
-        
-        {/* 現在の入力モード表示 */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: 2,
-          fontSize: 12,
-          fontWeight: 600,
-          color: inputMode === 'pattern-a' ? '#10b981' : '#3b82f6'
-        }}>
-          {inputMode === 'pattern-a' ? '📋 タップ式' : '👉 フリック式'}
-        </div>
       </div>
       
       {/* 操作説明モーダル */}
@@ -284,8 +231,7 @@ export default function CarPartSelector() {
             </div>
             <div style={{ fontSize: '15px', lineHeight: 1.8, marginBottom: '16px' }}>
               <strong>👆 タップ式入力:</strong><br/>
-              すべての瑕疵タイプとレベルをタップで選択<br/>
-              A1〜A3、U、B、W、S、C、Y(割れ)、✖✖、脱アト、G<br/><br/>
+              すべての瑕疵タイプとレベルをタップで選択<br/><br/>
               
               <strong>👉 フリック式入力:</strong><br/>
               メイン5種(A,U,B,W,✖✖)をフリックでレベル入力<br/>
@@ -400,6 +346,7 @@ export default function CarPartSelector() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         partName={selectedPartLabel || ''}
+        partId={selectedPart || ''}
         existingDefects={currentDefects}
         onConfirm={saveDefects}
         inputMode={inputMode}

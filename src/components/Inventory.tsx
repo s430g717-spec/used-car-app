@@ -289,7 +289,7 @@ export function Inventory() {
                 key={item.id}
                 style={{
                   padding: 16,
-                  border: '2px solid #e2e8f0',
+                  border: '1px solid #e2e8f0', // 2pxから1pxに変更
                   borderRadius: 12,
                   background: '#fff',
                   cursor: 'pointer',
