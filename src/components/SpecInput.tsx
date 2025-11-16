@@ -115,7 +115,7 @@ export function SpecInput() {
     setOcrProgress(0);
 
     try {
-      // 画像を前処理（コントラスト強化）
+      // 画像を読み込み
       const img = new Image();
       const imageUrl = URL.createObjectURL(imageFile);
       
@@ -125,25 +125,44 @@ export function SpecInput() {
         img.src = imageUrl;
       });
 
-      // Canvasで画像を前処理
+      // Canvasで画像を前処理（より強力な処理）
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      
+      // 画像を拡大（解像度を上げる）
+      const scale = Math.min(3000 / Math.max(img.width, img.height), 2);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      
       const ctx = canvas.getContext('2d');
       
       if (ctx) {
-        ctx.drawImage(img, 0, 0);
+        // 高品質スケーリング
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         
-        // コントラストを上げる
+        // 画像を描画
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // グレースケール化＋コントラスト強化
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
-        const contrast = 1.5; // コントラスト倍率
-        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
         
         for (let i = 0; i < data.length; i += 4) {
-          data[i] = factor * (data[i] - 128) + 128;     // R
-          data[i + 1] = factor * (data[i + 1] - 128) + 128; // G
-          data[i + 2] = factor * (data[i + 2] - 128) + 128; // B
+          // グレースケール化
+          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          
+          // コントラスト強化（より強力）
+          const contrast = 2.0;
+          const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+          const enhanced = factor * (gray - 128) + 128;
+          
+          // 二値化（白黒はっきり）
+          const threshold = 128;
+          const binary = enhanced > threshold ? 255 : 0;
+          
+          data[i] = binary;
+          data[i + 1] = binary;
+          data[i + 2] = binary;
         }
         
         ctx.putImageData(imageData, 0, 0);
@@ -151,11 +170,12 @@ export function SpecInput() {
 
       URL.revokeObjectURL(imageUrl);
 
-      // OCR実行（前処理済み画像を使用）
+      // OCR実行
       const processedBlob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.95);
+        canvas.toBlob((blob) => resolve(blob!), 'image/png');
       });
 
+      console.log('OCR開始...');
       const result = await Tesseract.recognize(processedBlob, 'jpn+eng', {
         logger: (m) => {
           if (m.status === 'recognizing text') {
@@ -172,16 +192,15 @@ export function SpecInput() {
 
       // 型式を抽出（より柔軟なパターン）
       const modelPatterns = [
-        /([A-Z]{3}[-\s]?[A-Z0-9]{4,8})/i,  // DBA-ZRE212形式
-        /型式[：:\s]*([A-Z0-9]{4,8})/i,     // 型式: ZRE212形式
-        /([A-Z]{2,4}[0-9]{3,5}[A-Z]?)/       // ZRE212形式
+        /([A-Z]{3}[-\s]?[A-Z0-9]{4,8})/i,
+        /型式[：:\s]*([A-Z0-9]{4,8})/i,
+        /([A-Z]{2,4}[0-9]{3,5}[A-Z]?)/
       ];
 
       for (const pattern of modelPatterns) {
         const match = text.match(pattern);
         if (match) {
           let fullModel = match[1].replace(/\s/g, '').toUpperCase();
-          // 排ガス記号を除去
           detectedModel = fullModel.replace(/^[A-Z]{3}-/, '');
           if (detectedModel.length >= 4) {
             setSpec(prev => ({ ...prev, model: detectedModel }));
@@ -191,7 +210,7 @@ export function SpecInput() {
         }
       }
 
-      // 車体番号を抽出（より柔軟なパターン）
+      // 車体番号を抽出
       const chassisPatterns = [
         /車体番号[：:\s]*([A-Z]{2,5}[-\s]?\d{6,8})/i,
         /([A-Z]{2,5}[-\s]\d{6,8})/i,
@@ -220,13 +239,13 @@ export function SpecInput() {
       }
 
       if (detectedModel || detectedChassis) {
-        alert('文字認識が完了しました。\n内容を確認して必要に応じて修正してください。');
+        alert(`文字認識が完了しました！\n\n検出内容:\n型式: ${detectedModel || '未検出'}\n車体番号: ${detectedChassis || '未検出'}\n\n内容を確認して、必要に応じて修正してください。`);
       } else {
-        alert('型式・車体番号を認識できませんでした。\n・明るい場所で撮影してください\n・ピントを合わせてください\n・手動入力もご利用いただけます');
+        alert('型式・車体番号を認識できませんでした。\n\n【撮影のコツ】\n・プレートに正面から近づく\n・明るい場所で撮影\n・影が入らないように\n・文字がはっきり見える距離\n\n何度か試しても認識しない場合は、手動入力をご利用ください。');
       }
     } catch (error) {
       console.error('OCR処理エラー:', error);
-      alert('文字認識に失敗しました。\n・明るい場所で撮影してください\n・画像を変えて再度お試しください\n・手動入力もご利用いただけます');
+      alert('文字認識に失敗しました。\n\n別の写真で再度お試しいただくか、手動入力をご利用ください。');
     } finally {
       setIsProcessing(false);
       setOcrProgress(0);
@@ -244,57 +263,55 @@ export function SpecInput() {
   // カメラ起動
   const startCamera = async () => {
     try {
-      // iOSではconstraintsを単純化する必要がある
+      console.log('カメラ起動を試みます...');
+      
       let stream;
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      };
+
       try {
-        // まずシンプルな設定で試す（iOS対応）
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('カメラストリーム取得成功');
+      } catch (e) {
+        console.log('高解像度カメラ失敗、標準設定で再試行:', e);
         stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
+          video: { facingMode: 'environment' },
           audio: false
         });
-      } catch (e) {
-        console.log('背面カメラ使用不可、前面カメラを試します:', e);
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: 'user',
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            },
-            audio: false
-          });
-        } catch (e2) {
-          // 最終的に最もシンプルな設定で試す
-          console.log('特定のカメラ指定失敗、デフォルト設定で試します:', e2);
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false
-          });
-        }
       }
       
-      if (videoRef.current) {
+      if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
-        // iOSではplaysinlineが必須
-        videoRef.current.setAttribute('playsinline', 'true');
-        videoRef.current.setAttribute('webkit-playsinline', 'true');
-        try {
-          await videoRef.current.play();
-          setIsCameraActive(true);
-        } catch (playError) {
-          console.error('ビデオ再生エラー:', playError);
-          alert('カメラの起動に失敗しました。\nブラウザの設定でカメラの使用を許可してください。');
-          // ストリームを停止
-          stream.getTracks().forEach(track => track.stop());
-        }
+        
+        // 再生を待機
+        await new Promise((resolve, reject) => {
+          if (!videoRef.current) return reject();
+          
+          videoRef.current.onloadedmetadata = async () => {
+            try {
+              await videoRef.current!.play();
+              console.log('カメラ表示成功');
+              resolve(true);
+            } catch (playError) {
+              console.error('再生エラー:', playError);
+              reject(playError);
+            }
+          };
+          
+          videoRef.current.onerror = reject;
+        });
+        
+        setIsCameraActive(true);
       }
     } catch (error) {
       console.error('カメラ起動エラー:', error);
-      alert('カメラを起動できませんでした。\n・Safariの設定でカメラの使用を許可してください\n・プライベートブラウズモードの場合は通常モードをお試しください\n・ファイル選択もご利用いただけます');
+      alert('カメラを起動できませんでした。\n\n代わりに「🖼️ ファイル選択」ボタンから：\n1. 写真を撮る\n2. 既存の写真を選択\nをお試しください。');
     }
   };
 
