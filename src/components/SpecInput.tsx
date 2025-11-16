@@ -452,6 +452,9 @@ export function SpecInput() {
             <div>
               <video
                 ref={videoRef}
+                playsInline
+                autoPlay
+                muted
                 style={{
                   width: '100%',
                   borderRadius: 8,
