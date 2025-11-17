@@ -101,14 +101,15 @@ export default function CarPartSelector() {
   const saveDefects = (defects: Defect[]) => {
     if (!selectedPart) return;
     
+    // A、A1、A2などの重複を防ぐ（同じtypeは1つまで）
     const uniqueDefects: Defect[] = [];
     defects.forEach(newDefect => {
-      const existingIndex = uniqueDefects.findIndex(
-        d => d.type === newDefect.type && d.level === newDefect.level
-      );
+      const existingIndex = uniqueDefects.findIndex(d => d.type === newDefect.type);
       if (existingIndex >= 0) {
+        // 同じtypeが既に存在する場合は上書き
         uniqueDefects[existingIndex] = newDefect;
       } else if (uniqueDefects.length < 2) {
+        // 2つまで追加可能
         uniqueDefects.push(newDefect);
       }
     });

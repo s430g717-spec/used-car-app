@@ -160,6 +160,18 @@ const CertifiedAppraiserDashboard: React.FC = () => {
     }
   };
 
+  // 鑑定内容編集（公認鑑定士専用）
+  const editAppraisal = async (item: AppraisalItem) => {
+    if (confirm('この鑑定内容（展開図・検査員報告）を編集しますか？')) {
+      // 展開図と検査員報告のみ編集可能にする
+      localStorage.setItem('partDefects', JSON.stringify(item.defects));
+      localStorage.setItem('inspectorReport', JSON.stringify(item.inspectorReport));
+      localStorage.setItem('editingAppraisalId', item.id);
+      window.dispatchEvent(new Event('storage'));
+      alert('鑑定内容を編集モードで読み込みました。展開図と検査員報告を編集後、保存してください。');
+    }
+  };
+
   const getStoreNameById = (storeId: string) => {
     const storeMap: { [key: string]: string } = {
       'youpos-hakata': 'ユーポス博多',
@@ -239,21 +251,34 @@ const CertifiedAppraiserDashboard: React.FC = () => {
 
       {/* タブナビゲーション */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{
+          display: 'flex',
+          gap: 10,
+          marginBottom: 20,
+          background: '#f8fafc',
+          padding: 8,
+          borderRadius: 12,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}>
           <button
             onClick={() => setActiveTab('pending')}
             style={{
               flex: 1,
-              padding: '14px',
-              border: 'none',
-              background: activeTab === 'pending' ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' : '#fff',
-              color: activeTab === 'pending' ? '#fff' : '#64748b',
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: 'pointer',
+              padding: '14px 20px',
               borderRadius: 8,
-              boxShadow: activeTab === 'pending' ? '0 4px 12px rgba(251, 191, 36, 0.3)' : '0 2px 4px rgba(0,0,0,0.05)',
-              transition: 'all 0.2s'
+              border: activeTab === 'pending' ? '2px solid #3b82f6' : '2px solid transparent',
+              background: activeTab === 'pending' 
+                ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' 
+                : '#fff',
+              fontSize: 16,
+              fontWeight: 700,
+              color: activeTab === 'pending' ? '#fff' : '#64748b',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'pending' 
+                ? '0 4px 12px rgba(59,130,246,0.3)' 
+                : '0 1px 3px rgba(0,0,0,0.05)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: activeTab === 'pending' ? 'translateY(-2px)' : 'translateY(0)'
             }}
           >
             🔔 認定依頼中 ({pendingItems.length})
@@ -262,16 +287,21 @@ const CertifiedAppraiserDashboard: React.FC = () => {
             onClick={() => setActiveTab('certified')}
             style={{
               flex: 1,
-              padding: '14px',
-              border: 'none',
-              background: activeTab === 'certified' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#fff',
-              color: activeTab === 'certified' ? '#fff' : '#64748b',
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: 'pointer',
+              padding: '14px 20px',
               borderRadius: 8,
-              boxShadow: activeTab === 'certified' ? '0 4px 12px rgba(16, 185, 129, 0.3)' : '0 2px 4px rgba(0,0,0,0.05)',
-              transition: 'all 0.2s'
+              border: activeTab === 'certified' ? '2px solid #10b981' : '2px solid transparent',
+              background: activeTab === 'certified' 
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                : '#fff',
+              fontSize: 16,
+              fontWeight: 700,
+              color: activeTab === 'certified' ? '#fff' : '#64748b',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'certified' 
+                ? '0 4px 12px rgba(16,185,129,0.3)' 
+                : '0 1px 3px rgba(0,0,0,0.05)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: activeTab === 'certified' ? 'translateY(-2px)' : 'translateY(0)'
             }}
           >
             ✅ 認定済み ({certifiedItems.length})
@@ -364,29 +394,43 @@ const CertifiedAppraiserDashboard: React.FC = () => {
                 )}
                 
                 {activeTab === 'certified' && item.certifiedAt && (
-                  <div style={{ 
-                    fontSize: 12, 
-                    color: '#059669',
-                    fontWeight: 600,
-                    marginTop: 8,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <span>✓ {new Date(item.certifiedAt).toLocaleString('ja-JP')} に認定</span>
+                  <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                    {/* 編集ボタン */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editAppraisal(item);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px 16px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                        color: '#fff',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(99,102,241,0.3)'
+                      }}
+                    >
+                      ✏️ 鑑定編集
+                    </button>
+                    
+                    {/* 認定取り消しボタン */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         uncertifyAppraisal(item);
                       }}
                       style={{
-                        padding: '6px 12px',
+                        padding: '10px 16px',
                         border: '1px solid #ef4444',
                         background: '#fff',
                         color: '#ef4444',
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: 600,
-                        borderRadius: 6,
+                        borderRadius: 8,
                         cursor: 'pointer'
                       }}
                     >

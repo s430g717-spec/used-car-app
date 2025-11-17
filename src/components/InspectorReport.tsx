@@ -182,25 +182,6 @@ export function InspectorReport() {
           車両の検査結果を自由に入力してください
         </p>
 
-        {/* 自動保存表示 */}
-        <div style={{
-          marginBottom: 16,
-          padding: 10,
-          background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-          borderRadius: 8,
-          textAlign: 'center',
-          fontSize: 13,
-          fontWeight: 600,
-          color: '#065f46',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 6
-        }}>
-          <span>✓</span>
-          <span>自動保存中</span>
-        </div>
-
         <div style={{ marginBottom: 12, padding: 12, background: '#dbeafe', borderRadius: 8 }}>
           <div style={{ fontSize: 12, color: '#1e40af', fontWeight: 600, marginBottom: 4 }}>
             💡 総合評価 参考値（減点方式）
@@ -312,6 +293,26 @@ export function InspectorReport() {
           >
             クリア
           </button>
+        </div>
+
+        {/* 自動保存表示を最下部に追加 */}
+        <div style={{
+          marginTop: 20,
+          padding: 12,
+          background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+          borderRadius: 8,
+          textAlign: 'center',
+          fontSize: 13,
+          fontWeight: 600,
+          color: '#065f46',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          boxShadow: '0 2px 8px rgba(16,185,129,0.15)'
+        }}>
+          <span>✓</span>
+          <span>自動保存中</span>
         </div>
       </div>
     </div>

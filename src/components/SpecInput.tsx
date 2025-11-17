@@ -752,20 +752,38 @@ export function SpecInput() {
             </label>
             <input
               type="text"
-              inputMode="text"
               value={spec.model}
-              onChange={(e) => handleInput('model', e.target.value)}
+              onChange={(e) => {
+                const corrected = correctToyotaModel(e.target.value);
+                handleInput('model', corrected);
+                if (corrected && !spec.chassisPrefix) {
+                  handleInput('chassisPrefix', corrected);
+                }
+              }}
+              onBlur={(e) => {
+                const corrected = correctToyotaModel(e.target.value);
+                if (corrected !== e.target.value) {
+                  handleInput('model', corrected);
+                }
+              }}
               placeholder="例: ZRE212W"
+              inputMode="text"  // アルファベット＋数字キーボード
               style={{
                 width: '100%',
                 fontSize: 16,
+                fontWeight: 600,
                 padding: '12px 14px',
+                marginTop: 6,
                 borderRadius: 8,
                 border: '2px solid #e2e8f0',
                 outline: 'none',
-                boxSizing: 'border-box',
-                textTransform: 'uppercase'
+                transition: 'border-color 0.15s',
+                textTransform: 'uppercase',
+                fontFamily: 'monospace',
+                boxSizing: 'border-box'
               }}
+              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+              onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
             />
           </div>
 
