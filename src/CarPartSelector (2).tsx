@@ -77,6 +77,7 @@ export function CarPartSelector() {
   const [partDefects, setPartDefects] = useState<PartDefect[]>([]);
   const [hovered, setHovered] = useState<string | null>(null);
   const [debugShow, setDebugShow] = useState(false);
+  const [pattern, setPattern] = useState<"A" | "B">("A");
 
   // LocalStorageから復元
   React.useEffect(() => {
@@ -229,6 +230,13 @@ export function CarPartSelector() {
           <Button onClick={() => setScoreDialogOpen(true)} className="w-full" size="lg">
             <Calculator className="w-4 h-4 mr-2" /> 評価点を算�E
           </Button>
+
+          <button
+            onClick={() => setPattern(p => (p === "A" ? "B" : "A"))}
+            style={{ margin: 8, padding: "6px 16px" }}
+          >
+            {pattern === "A" ? "パターンA" : "パターンB"}
+          </button>
         </CardContent>
       </Card>
 

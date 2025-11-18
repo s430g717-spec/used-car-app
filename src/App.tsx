@@ -14,8 +14,7 @@ export default function App() {
     { id: 'diagram', label: '🚗 展開図' },
     { id: 'spec', label: '📝 諸元' },
     { id: 'report', label: '🔍 検査報告' },
-    { id: 'inventory', label: '📦 在庫管理' },
-    { id: 'export', label: '📄 PDF出力' }
+    { id: 'inventory', label: '📦 在庫管理' }
   ];
 
   // スワイプジェスチャーでタブ切り替え
@@ -42,11 +41,6 @@ export default function App() {
   };
 
   const renderContent = () => {
-    // LocalStorageからデータ取得
-    const carSpec: CarSpec = JSON.parse(localStorage.getItem('carSpec') || '{}');
-    const partDefects: PartDefect[] = JSON.parse(localStorage.getItem('partDefects') || '[]');
-    const inspectorReport = localStorage.getItem('inspectorReport') || '';
-
     switch(activeTab) {
       case 'diagram':
         return <CarPartSelector />;
@@ -56,15 +50,6 @@ export default function App() {
         return <InspectorReport />;
       case 'inventory':
         return <Inventory />;
-      case 'export':
-        return (
-          <PDFExport
-            carSpec={carSpec}
-            partDefects={partDefects}
-            inspectorReport={inspectorReport}
-            onExport={() => alert('PDFを保存しました')}
-          />
-        );
       default:
         return null;
     }
