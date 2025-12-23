@@ -5,9 +5,16 @@ import App from "./App";
 // Register service worker for PWA on supported browsers
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      // silent failure
-    });
+    const base = (import.meta as any).env?.BASE_URL || "/";
+    const swUrl = new URL("sw.js", base).toString();
+    navigator.serviceWorker
+      .register(swUrl)
+      .then((reg) => {
+        if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      })
+      .catch(() => {
+        // silent failure
+      });
   });
 }
 

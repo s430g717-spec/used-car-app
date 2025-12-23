@@ -7,6 +7,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -19,6 +20,13 @@ self.addEventListener("activate", (event) => {
         )
       )
   );
+  self.clients && self.clients.claim && self.clients.claim();
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", (event) => {
