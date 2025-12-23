@@ -8,7 +8,7 @@ export type Part = {
   h: number;
 };
 
-export const DIAGRAM_SRC = "/car_diagram_v3.png";
+export const DIAGRAM_SRC = `${import.meta.env.BASE_URL}car_diagram_v3.png`;
 export const STEP_Y = 4;
 
 export const parts: Part[] = [
