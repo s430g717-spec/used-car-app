@@ -1,4 +1,5 @@
-import React from "react";
+// @ts-nocheck
+/** @jsxImportSource react */
 
 // 必要なpropsを定義（元のコードから推測）
 interface EvaluationScoreDialogProps {

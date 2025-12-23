@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <style>
+      .body { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.2; }
+      .detail { fill: none; stroke: #cbd5e1; stroke-width: 1; opacity: .8; }
+    </style>
+  </defs>
+  <rect x="10" y="8" width="80" height="64" rx="6" class="body" />
+  <path d="M12 20 Q20 12 35 12 H65 Q80 12 88 20" class="detail"/>
+  <path d="M12 60 Q20 68 35 68 H65 Q80 68 88 60" class="detail"/>
+  <circle cx="30" cy="68" r="6" class="detail"/>
+  <circle cx="70" cy="68" r="6" class="detail"/>
+</svg>

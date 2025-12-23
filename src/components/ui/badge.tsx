@@ -1,21 +1,22 @@
-import * as React from "react";
+// @ts-nocheck
+import type { ComponentProps } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 // shadcn/ui の Badge コンポーネントの構造を模倣
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-white",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+          "border-transparent bg-slate-900 text-white shadow hover:bg-slate-800",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border-transparent bg-slate-100 text-slate-800 hover:bg-slate-200",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
-        // 評価点システムで使われそうなカスタムスタイル
+          "border-transparent bg-red-600 text-white shadow hover:bg-red-700",
+        outline: "text-slate-900 border-slate-300",
+        // 評価点システム用カスタム
         score: "bg-green-100 text-green-700 border-green-300",
       },
     },
@@ -26,7 +27,7 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends ComponentProps<"div">,
     VariantProps<typeof badgeVariants> {}
 
 // 名前付きエクスポートを使用

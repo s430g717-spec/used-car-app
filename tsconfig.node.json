@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
-    "composite": true
+    "composite": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
   }
 }

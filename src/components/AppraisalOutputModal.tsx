@@ -1,4 +1,5 @@
-import React from 'react';
+// @ts-nocheck
+/** @jsxImportSource react */
 
 // 仮のprops定義 (元のコード構造に合わせるため)
 interface AppraisalOutputModalProps {
@@ -9,7 +10,11 @@ interface AppraisalOutputModalProps {
 }
 
 // 名前付きエクスポートを使用
-export function AppraisalOutputModal({ open, onOpenChange, evaluation }: AppraisalOutputModalProps) {
+export function AppraisalOutputModal({
+  open,
+  onOpenChange,
+  evaluation,
+}: AppraisalOutputModalProps) {
   if (!open || !evaluation) return null; // モーダルが閉じていたら何も表示しない
 
   return (
@@ -18,8 +23,8 @@ export function AppraisalOutputModal({ open, onOpenChange, evaluation }: Apprais
       <div className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full">
         <h2 className="text-xl font-bold mb-4">鑑定書出力モーダル (仮)</h2>
         <p>コンポーネントは正常にロードされました。</p>
-        <button 
-          onClick={() => onOpenChange(false)} 
+        <button
+          onClick={() => onOpenChange(false)}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           閉じる

@@ -1,0 +1,131 @@
+/* Print optimization for A4 documents */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+/* Use legible Japanese fonts for print */
+:root {
+  --print-font: "Yu Mincho", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+}
+
+html,
+body {
+  color: #111827;
+}
+
+/* Hide app chrome, tabs and buttons during print */
+@media print {
+  /* Page content width to fit within margins: 210mm - 24mm = 186mm */
+  .print-area {
+    width: 186mm !important;
+  }
+
+  /* Section titles: ink-friendly style */
+  .print-area .section-title {
+    background: #ffffff !important;
+    color: #111827 !important;
+    padding-left: 10px !important;
+    border-left: 4px solid #111827 !important;
+  }
+
+  /* Images: scale down, keep crisp */
+  .print-area img {
+    max-width: 100% !important;
+    height: auto !important;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  /* Layout container adjustments for print */
+  .print-root,
+  .print-container {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .print-area {
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  header,
+  nav,
+  .btn,
+  .card,
+  .input,
+  .tabs,
+  .shadcn-ui,
+  .no-print,
+  .modal-backdrop,
+  .toast,
+  .container > .grid > .sticky,
+  .container > .grid > .lg\:sticky {
+    display: none !important;
+  }
+
+  .print-root,
+  .print-area {
+    display: block !important;
+  }
+
+  /* Ensure white background and crisp text */
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: #ffffff !important;
+    font-family: var(--print-font);
+  }
+
+  /* Remove unnecessary box shadows and borders */
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .border,
+  .border-slate-200,
+  .border-slate-300 {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Normalize spacing for report blocks */
+  .report-block {
+    margin: 0 0 8mm 0 !important;
+    page-break-inside: avoid;
+  }
+
+  /* Info table grid for vehicle data */
+  .info-table {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid #d1d5db;
+    border-left: 1px solid #d1d5db;
+  }
+  .info-table .row {
+    display: contents;
+  }
+  .info-table .cell {
+    padding: 6px 10px;
+    border-right: 1px solid #d1d5db;
+    border-bottom: 1px solid #d1d5db;
+  }
+  .info-table .cell.head {
+    background: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+  }
+  .info-table .cell.val {
+    color: #111827;
+  }
+
+  /* SVG text rendering tweaks for diagrams */
+  svg text {
+    fill: #111827 !important;
+    font-family: var(--print-font);
+  }
+}

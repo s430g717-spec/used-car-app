@@ -1,0 +1,143 @@
+@import "tailwindcss";
+@reference "../index.html";
+
+:root {
+  --radius-card: 0.75rem;
+  /* ブランドカラー（お好みで変更可） */
+  --brand-300: #34d399; /* emerald-400 相当 */
+  --brand-500: #10b981; /* emerald-500 相当 */
+  --brand-600: #059669; /* emerald-600 相当 */
+  --brand-700: #047857; /* emerald-700 相当 */
+}
+
+@layer components {
+  .card {
+    @apply bg-white/90 backdrop-blur rounded-xl border border-slate-200 shadow-xl;
+  }
+  .section-card {
+    @apply rounded-xl border border-slate-200 p-3 shadow-sm bg-white;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm font-medium transition-all focus:outline-none focus:ring-2 active:scale-95 hover:shadow-sm;
+  }
+  .btn-primary {
+    @apply text-white shadow-md hover:shadow-lg;
+    background-color: var(--brand-600);
+    border-color: var(--brand-600);
+    background-image: linear-gradient(
+      180deg,
+      var(--brand-500),
+      var(--brand-700)
+    );
+    &:hover {
+      background-color: var(--brand-700);
+    }
+    &:active {
+      background-color: var(--brand-700);
+    }
+    &:focus {
+      box-shadow: 0 0 0 3px
+        color-mix(in oklab, var(--brand-300) 50%, transparent);
+    }
+  }
+  .panel-amber {
+    @apply rounded-xl border-2 border-amber-400 bg-gradient-to-b from-amber-50 to-amber-100 shadow-md;
+  }
+  .panel-blue {
+    @apply rounded-xl border-2 border-sky-400 bg-gradient-to-b from-blue-50 to-sky-100 shadow-md;
+  }
+  .panel-indigo {
+    @apply rounded-xl border-2 border-indigo-400 bg-gradient-to-b from-indigo-50 to-indigo-100 shadow-md;
+  }
+  .section-title-accent {
+    @apply text-xs font-semibold tracking-wide uppercase text-white px-3 py-1.5;
+    background-image: linear-gradient(
+      90deg,
+      var(--brand-700),
+      var(--brand-500)
+    );
+    border-radius: 0.375rem;
+  }
+  .btn-outline {
+    @apply bg-white text-slate-800 border-slate-300 hover:bg-slate-50;
+  }
+  .btn-ghost {
+    @apply bg-transparent hover:bg-slate-100 border-slate-300 text-slate-700;
+  }
+  .btn-amber {
+    @apply bg-amber-50 text-amber-800 hover:bg-amber-100 active:bg-amber-200 border-amber-200;
+  }
+  .btn-full {
+    @apply w-full;
+  }
+  .modal {
+    @apply bg-white/95 backdrop-blur rounded-xl shadow-2xl border border-slate-200;
+  }
+  .modal-header {
+    @apply flex items-center gap-2 text-slate-800 font-semibold text-base;
+  }
+  .divider {
+    @apply h-px bg-slate-200 my-3;
+  }
+  .input {
+    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200;
+  }
+  .select {
+    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200;
+  }
+  .checkbox {
+    @apply w-4 h-4 rounded border border-slate-300 accent-emerald-600;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-md border px-2 py-0.5 text-xs text-slate-700 bg-slate-50;
+  }
+  .section-title {
+    @apply text-xs font-semibold tracking-wide uppercase bg-slate-900 text-white px-3 py-1.5;
+  }
+  .overlay-pop {
+    animation: overlay-pop 1.2s ease-in-out both;
+  }
+  .no-print {
+    @apply print:hidden;
+  }
+  .print-only {
+    @apply hidden print:block;
+  }
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+  }
+  body {
+    @apply text-slate-800;
+  }
+  h1 {
+    @apply text-2xl font-bold text-slate-900;
+  }
+  h2 {
+    @apply text-xl font-semibold text-slate-900;
+  }
+  h3 {
+    @apply text-lg font-semibold text-slate-900;
+  }
+}
+
+@keyframes overlay-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}

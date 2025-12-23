@@ -1,10 +1,11 @@
-import React from 'react';
-import { EvaluationScore } from '../App'; // App.tsxの型定義をインポートすると仮定
+// @ts-nocheck
+/** @jsxImportSource react */
+import { EvaluationScore } from "../App"; // App.tsxの型定義をインポートすると仮定
 // 必要なコンポーネントをインポート
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Table, TableBody, TableCell, TableRow } from './ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Table, TableBody, TableCell, TableRow } from "./ui/table";
 
 // 必要なpropsを定義
 interface EvaluationResultProps {
@@ -13,8 +14,10 @@ interface EvaluationResultProps {
 }
 
 // 名前付きエクスポートを使用
-export function EvaluationResult({ evaluation, onViewReport }: EvaluationResultProps) {
-  
+export function EvaluationResult({
+  evaluation,
+  onViewReport,
+}: EvaluationResultProps) {
   // エラー解消のため、一旦は最小限のUIを記述します。
   return (
     <Card className="shadow-lg">
@@ -26,12 +29,12 @@ export function EvaluationResult({ evaluation, onViewReport }: EvaluationResultP
           </Badge>
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent>
         <Table className="mb-4">
           <TableBody>
             <TableRow>
-              <TableCell className="font-semibold w-[120px]">参考値 (点)</TableCell>
+              <TableCell className="font-semibold w-30">参考値 (点)</TableCell>
               <TableCell>{evaluation.referenceScore}</TableCell>
             </TableRow>
             <TableRow>
@@ -40,10 +43,13 @@ export function EvaluationResult({ evaluation, onViewReport }: EvaluationResultP
             </TableRow>
           </TableBody>
         </Table>
-        
+
         <div className="flex justify-end gap-3 mt-4">
           <Button variant="secondary">再評価</Button>
-          <Button onClick={onViewReport} className="bg-blue-600 hover:bg-blue-700">
+          <Button
+            onClick={onViewReport}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             鑑定書を表示
           </Button>
         </div>

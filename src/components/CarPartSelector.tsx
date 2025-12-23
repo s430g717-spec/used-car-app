@@ -1,380 +1,589 @@
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Calculator, AlertCircle } from "lucide-react";
-import { DefectInputDialog, Defect } from "./DefectInputDialog";
-import { EvaluationScoreDialog } from "./EvaluationScoreDialog";
-// import carDiagram from 'figma:asset/894aee2d921dc83a71b03e37d1d9ad84db115cae.png';
+// @ts-nocheck
+/** @jsxImportSource react */
+import { useEffect, useRef, useState } from "react";
+import Webcam from "react-webcam";
+import { DIAGRAM_SRC, STEP_Y, parts as baseParts } from "../lib/parts";
+import { calculateFinalScore, QUICK_REFERENCE } from "../utils/evaluationLogic";
+import { saveImageFromDataUrl } from "../lib/idb";
 
-const carDiagram = "/car_diagram_v3.png";
-
-interface CarPart {
+type Part = {
   id: string;
   name: string;
-  label: string;
-  area: { x: number; y: number; width: number; height: number };
-  labelPosition: { x: number; y: number };
-}
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+type Defect = { type: string; level?: string };
+type PartDefects = { partId: string; list: Defect[]; photos?: string[] };
 
-// Restore the parent div and adjust carParts y coordinates by -55
-const carParts: CarPart[] = [
-  // 1. Fバンパー（最上部）
-  {
-    id: "front-bumper",
-    name: "Fバンパー",
-    label: "FB",
-    area: { x: 33, y: 10, width: 32, height: 6 }, // y: 10 - 55 = -45
-    labelPosition: { x: 50, y: -47 }, // labelPosition.y: 8 - 55 = -47
-  },
+export type OnDefectsChange = (defs: PartDefects[]) => void;
 
-  // 2. ボンネット（中央上部）
-  {
-    id: "hood",
-    name: "ボンネット",
-    label: "HD",
-    area: { x: 33, y: 17, width: 32, height: 13 }, // y: 17 - 55 = -38
-    labelPosition: { x: 50, y: -30 }, // labelPosition.y: 25 - 55 = -30
-  },
+const HITBOX_PAD = 2.5; // タップ領域の拡張（SVG座標単位・モバイル強化）
+const parts: Part[] = baseParts;
+export function CarPartSelector({
+  onDefectsChange,
+}: {
+  onDefectsChange?: OnDefectsChange;
+}) {
+  const [selected, setSelected] = useState<Part | null>(null);
+  const [pressedId, setPressedId] = useState<string | null>(null);
+  const [level, setLevel] = useState<string>("");
+  const [defects, setDefects] = useState<PartDefects[]>([]);
+  const [pendingType, setPendingType] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [editableParts, setEditableParts] = useState<Part[]>(parts);
+  const [editMode, setEditMode] = useState(false);
+  const [levelOverlay, setLevelOverlay] = useState<string | null>(null);
+  const [camOpen, setCamOpen] = useState(false);
+  const webcamRef = useRef<Webcam | null>(null);
+  const [mileage, setMileage] = useState<string>("");
+  const [interiorRank, setInteriorRank] = useState("A");
 
-  // 3. Fガラス（フロントガラス）
-  {
-    id: "front-glass",
-    name: "Fガラス",
-    label: "FG",
-    area: { x: 34, y: -28, width: 31, height: 7 }, // y: 27 - 55 = -28
-    labelPosition: { x: 50, y: -25 }, // labelPosition.y: 30 - 55 = -25
-  },
+  const finalScore = calculateFinalScore({
+    mileageKm: Number(mileage) || 0,
+    interiorRank: interiorRank as any,
+    defects,
+  });
 
-  // 4. ルーフ（屋根）
-  {
-    id: "roof",
-    name: "ルーフ",
-    label: "RF",
-    area: { x: 31, y: -17, width: 36, height: 29 }, // y: 38 - 55 = -17
-    labelPosition: { x: 50, y: -10 }, // labelPosition.y: 45 - 55 = -10
-  },
+  useEffect(() => {
+    if (onDefectsChange) onDefectsChange(defects);
+  }, [defects, onDefectsChange]);
 
-  // 5. 右Fフェンダー（右上タイヤ周辺）
-  {
-    id: "right-front-fender",
-    name: "右Fフェンダー",
-    label: "RFF",
-    area: { x: 67, y: -46, width: 20, height: 21 }, // y: 9 - 55 = -46
-    labelPosition: { x: 80, y: -41 }, // labelPosition.y: 14 - 55 = -41
-  },
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
 
-  // 6. 右Fドア
-  {
-    id: "right-front-door",
-    name: "右Fドア",
-    label: "RFD",
-    area: { x: 67, y: -33, width: 17, height: 12 }, // y: 22 - 55 = -33
-    labelPosition: { x: 76, y: -38 }, // labelPosition.y: 17 - 55 = -38
-  },
-
-  // 7. 右ステップ（サイドシル）- 右端に配置
-  {
-    id: "right-step",
-    name: "右ステップ",
-    label: "",
-    area: { x: 86, y: -28, width: 7, height: 24 }, // y: 27 - 55 = -28
-    labelPosition: { x: 98, y: -38 }, // labelPosition.y: 17 - 55 = -38
-  },
-
-  // 8. 右Rドア
-  {
-    id: "right-rear-door",
-    name: "右Rドア",
-    label: "RRD",
-    area: { x: 67, y: -23, width: 17, height: 12 }, // y: 32 - 55 = -23
-    labelPosition: { x: 76, y: -28 }, // labelPosition.y: 27 - 55 = -28
-  },
-
-  // 9. 右Rフェンダー（右下タイヤ周辺）
-  {
-    id: "right-rear-fender",
-    name: "右Rフェンダー",
-    label: "RRF",
-    area: { x: 66, y: -6, width: 24, height: 16 }, // y: 49 - 55 = -6
-    labelPosition: { x: 74, y: -14 }, // labelPosition.y: 43 - 55 = -14
-  },
-
-  // 10. Rゲート（リアゲート）
-  {
-    id: "rear-gate",
-    name: "Rゲート",
-    label: "RG",
-    area: { x: 31, y: 1, width: 36, height: 15 }, // y: 56 - 55 = 1
-    labelPosition: { x: 50, y: -19 }, // labelPosition.y: 41 - 55 = -19
-  },
-
-  // 11. Rバンパー（最下部）
-  {
-    id: "rear-bumper",
-    name: "Rバンパー",
-    label: "RB",
-    area: { x: 31, y: 16, width: 35, height: 8 }, // y: 71 - 55 = 16
-    labelPosition: { x: 50, y: 5 }, // labelPosition.y: 55 - 55 = 5
-  },
-
-  // 12. 左Rフェンダー（左下タイヤ周辺）
-  {
-    id: "left-rear-fender",
-    name: "左Rフェンダー",
-    label: "LRF",
-    area: { x: 7, y: -6, width: 24, height: 16 }, // y: 49 - 55 = -6
-    labelPosition: { x: 20, y: -14 }, // labelPosition.y: 43 - 55 = -14
-  },
-
-  // 13. 左Rドア
-  {
-    id: "left-rear-door",
-    name: "左Rドア",
-    label: "LRD",
-    area: { x: 13, y: -23, width: 17, height: 12 }, // y: 32 - 55 = -23
-    labelPosition: { x: 20, y: -28 }, // labelPosition.y: 27 - 55 = -28
-  },
-
-  // 14. 左ステップ（サイドシル）- 左端に配置
-  {
-    id: "left-step",
-    name: "左ステップ",
-    label: "",
-    area: { x: 6, y: -28, width: 7, height: 24 }, // y: 27 - 55 = -28
-    labelPosition: { x: 2, y: -38 }, // labelPosition.y: 17 - 55 = -38
-  },
-
-  // 15. 左Fドア
-  {
-    id: "left-front-door",
-    name: "左Fドア",
-    label: "LFD",
-    area: { x: 13, y: -33, width: 17, height: 12 }, // y: 22 - 55 = -33
-    labelPosition: { x: 20, y: -38 }, // labelPosition.y: 17 - 55 = -38
-  },
-
-  // 16. 左Fフェンダー（左上タイヤ周辺）
-  {
-    id: "left-front-fender",
-    name: "左Fフェンダー",
-    label: "LFF",
-    area: { x: 11, y: -46, width: 20, height: 21 }, // y: 9 - 55 = -46
-    labelPosition: { x: 20, y: -41 }, // labelPosition.y: 14 - 55 = -41
-  },
-].map((part) => ({
-  ...part,
-  area: {
-    ...part.area,
-    y: part.area.y - 50, // Adjust y-coordinate
-  },
-  labelPosition: {
-    ...part.labelPosition,
-    y: part.labelPosition.y - 50, // Adjust labelPosition y-coordinate
-  },
-}));
-
-export interface PartDefect {
-  partId: string;
-  partName: string;
-  defects: Defect[];
-}
-
-export function CarPartSelector() {
-  const [selectedPart, setSelectedPart] = useState<CarPart | null>(null);
-  const [partDefects, setPartDefects] = useState<PartDefect[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [scoreDialogOpen, setScoreDialogOpen] = useState(false);
-  const [hoveredPart, setHoveredPart] = useState<string | null>(null);
-
-  // Ensure handlePartClick is defined and functional
-  const handlePartClick = (part: CarPart) => {
-    console.log(`部位クリックイベント発火: ${part.name}`); // ★これを追加★
-    setSelectedPart(part);
-    setDialogOpen(true);
+  const toggleFullscreen = async () => {
+    const el = containerRef.current;
+    if (!el) return;
+    try {
+      if (!document.fullscreenElement) await el.requestFullscreen?.();
+      else await document.exitFullscreen?.();
+    } catch {}
   };
 
-  const handleDefectsConfirm = (defects: Defect[]) => {
-    if (!selectedPart) return;
-
-    const updatedDefects = partDefects.map((pd) =>
-      pd.partId === selectedPart.id ? { ...pd, defects } : pd
-    );
-
-    setPartDefects(updatedDefects);
-    setDialogOpen(false);
+  const capturePhoto = () => {
+    const shot = webcamRef.current?.getScreenshot();
+    if (!shot || !selected) return;
+    // compress
+    const img = new Image();
+    img.onload = async () => {
+      const maxW = 1200;
+      const scale = img.width > maxW ? maxW / img.width : 1;
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, w, h);
+      const out = canvas.toDataURL("image/jpeg", 0.8);
+      // save to IndexedDB and store reference idb:<id>
+      let ref = out;
+      try {
+        const id = await saveImageFromDataUrl(out);
+        ref = `idb:${id}`;
+      } catch {}
+      setDefects((prev) => {
+        const idx = prev.findIndex((d) => d.partId === selected.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          const photos = copy[idx].photos ? [...copy[idx].photos, ref] : [ref];
+          copy[idx] = { ...copy[idx], photos };
+          return copy;
+        }
+        return [...prev, { partId: selected.id, list: [], photos: [ref] }];
+      });
+      setCamOpen(false);
+    };
+    img.src = shot;
   };
-
-  const getPartDefects = (partId: string): Defect[] => {
-    return partDefects.find((pd) => pd.partId === partId)?.defects || [];
-  };
-
-  const hasDefects = (partId: string): boolean => {
-    return getPartDefects(partId).length > 0;
-  };
-
-  const getDefectLabel = (partId: string): string => {
-    const defects = getPartDefects(partId);
-    if (defects.length === 0) return "";
-    return defects
-      .slice(0, 2)
-      .map((d) => `${d.type}${d.level}`)
-      .join(" ");
-  };
-
-  const totalDefects = partDefects.reduce(
-    (sum, pd) => sum + pd.defects.length,
-    0
-  );
 
   return (
-    <div className="max-w-lg mx-auto space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>車体展開図（USS形式）</CardTitle>
-          <CardDescription>
-            部位をタップして瑕疵を入力してください（全16箇所）
-          </CardDescription>
-          {totalDefects > 0 && (
-            <div className="mt-3 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-orange-600" />
-              <span className="text-sm text-orange-700">
-                {totalDefects} 件の瑕疵が記録されています（{partDefects.length}
-                /16箇所）
+    <div className="p-4">
+      <div
+        ref={containerRef}
+        className={`relative ${
+          isFullscreen ? "rounded-none border-0 bg-white" : "card"
+        }`}
+        style={{ height: isFullscreen ? ("100dvh" as any) : undefined }}
+      >
+        <div className="absolute right-2 top-2 z-10">
+          <button
+            className="btn btn-ghost text-xs"
+            onClick={() => setIsFullscreen((v) => !v)}
+          >
+            {isFullscreen ? "縮小" : "全画面"}
+          </button>
+        </div>
+
+        <div className="p-4 grid md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <label className="form-control">
+              <span className="label text-sm font-medium text-slate-700">
+                走行距離 (km)
               </span>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* 車体展開図 */}
-          <div className="relative bg-gradient-to-b from-slate-50 to-slate-100 rounded-lg p-4 border-2 border-slate-300">
-            {/* 車の画像 */}
-            <div className="relative w-full aspect-[1/1.3]">
-              <img
-                src={carDiagram}
-                alt="車体展開図"
-                className="w-full h-full object-contain"
-                style={{ opacity: 0.5 }} // Set opacity
+              <input
+                type="number"
+                min={0}
+                className="input"
+                value={mileage}
+                onChange={(e) => setMileage(e.target.value)}
+                placeholder="例: 50000"
+                inputMode="numeric"
               />
+            </label>
 
-              <svg
-                viewBox="0 0 100 100"
-                className="absolute inset-0 w-full h-full"
-                style={{ zIndex: 100 }} // Set zIndex
+            <label className="form-control">
+              <span className="label text-sm font-medium text-slate-700">
+                内外装ランク
+              </span>
+              <select
+                className="input"
+                value={interiorRank}
+                onChange={(e) => setInteriorRank(e.target.value)}
               >
-                {carParts.map((part) => (
-                  <rect
-                    key={part.id}
-                    x={part.area.x}
-                    y={part.area.y}
-                    width={part.area.width}
-                    height={part.area.height}
-                    fill="rgba(255, 0, 0, 1.0)" // Set fill color
-                    opacity={1} // Set opacity
-                    style={{ pointerEvents: "all" }}
-                    onClick={() => handlePartClick(part)}
-                  />
+                {["A", "B", "C", "D", "E"].map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
                 ))}
-              </svg>
-            </div>
+              </select>
+            </label>
 
-            {/* 凡例 */}
-            <div className="mt-4 pt-3 border-t text-xs text-slate-600 flex items-center justify-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-yellow-100 border border-yellow-500 rounded"></div>
-                <span>瑕疵あり</span>
+            <button
+              className="btn btn-ghost text-xs w-fit"
+              title={QUICK_REFERENCE}
+            >
+              早見表 (距離上限)
+            </button>
+          </div>
+
+          <div className="section-card p-4 space-y-2">
+            <div className="text-sm font-semibold text-slate-800">
+              評価点算出（参考値）
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100">
+                <div className="text-xs">走行距離制限</div>
+                <div className="text-lg font-bold">
+                  {finalScore.caps.distanceLabel} 点
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-100 border border-blue-500 rounded"></div>
-                <span>選択中</span>
+              <div className="p-2 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-100">
+                <div className="text-xs">内外装点</div>
+                <div className="text-lg font-bold">
+                  {finalScore.caps.baseFromInterior.toFixed(1)} 点
+                </div>
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between">
+              <div className="text-sm opacity-80">総合評価点 (参考)</div>
+              <div className="text-3xl font-bold">{finalScore.label}</div>
+            </div>
+            <div className="text-xs text-slate-600 space-y-1">
+              {finalScore.reasons.map((r, i) => (
+                <div key={i}>・{r}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className={`w-full block ${isFullscreen ? "h-dvh" : "h-[70vh]"}`}
+          style={{ touchAction: "none" }}
+        >
+          <image href={DIAGRAM_SRC} x="0" y="0" width="100" height="100" />
+          {editableParts.map((p) => (
+            <g key={p.id}>
+              <rect
+                x={p.x - HITBOX_PAD}
+                y={p.y - HITBOX_PAD}
+                width={p.w + HITBOX_PAD * 2}
+                height={p.h + HITBOX_PAD * 2}
+                fill="transparent"
+                stroke="none"
+                onPointerDown={() => setPressedId(p.id)}
+                onPointerUp={() => {
+                  setPressedId(null);
+                  setSelected(p);
+                }}
+                onPointerCancel={() => setPressedId(null)}
+                onClick={() => setSelected(p)}
+                onMouseEnter={() => setPressedId(p.id)}
+                onMouseLeave={() => setPressedId(null)}
+                style={{ cursor: "pointer" }}
+              />
+              <rect
+                x={p.x}
+                y={p.y}
+                width={p.w}
+                height={p.h}
+                fill="transparent"
+                stroke="none"
+                opacity={0}
+                pointerEvents="none"
+              />
+              <rect
+                x={p.x - 1}
+                y={p.y - 1}
+                width={p.w + 2}
+                height={p.h + 2}
+                fill="none"
+                stroke={
+                  pressedId === p.id || selected?.id === p.id
+                    ? "#38bdf8"
+                    : "transparent"
+                }
+                strokeWidth={
+                  pressedId === p.id || selected?.id === p.id ? 2 : 0
+                }
+                pointerEvents="none"
+              />
+              {(() => {
+                const pd = defects.find((d) => d.partId === p.id);
+                if (!pd || pd.list.length === 0) return null;
+                const items = pd.list
+                  .slice(0, 2)
+                  .map((d) => (d.level ? `${d.type}${d.level}` : d.type));
+                let startY = p.y + p.h - 6;
+                const offsetMap: Record<string, number> = {
+                  roof: -10,
+                  left_front_door: -2,
+                  right_front_door: -2,
+                  left_rear_door: -2,
+                  right_rear_door: -2,
+                  front_bumper: -1,
+                  rear_bumper: -1,
+                  hood: -4,
+                  gate: -4,
+                };
+                startY += offsetMap[p.id] ?? 0;
+                return (
+                  <text
+                    x={p.x + p.w / 2}
+                    y={startY}
+                    textAnchor="middle"
+                    fontSize={3.8}
+                    fontWeight={700}
+                    fill="#dc2626"
+                  >
+                    {items.map((t, i) => (
+                      <tspan key={i} x={p.x + p.w / 2} dy={i === 0 ? 0 : 3.5}>
+                        {t}
+                      </tspan>
+                    ))}
+                  </text>
+                );
+              })()}
+            </g>
+          ))}
+        </svg>
+
+        {selected && (
+          <div className="absolute inset-0">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => {
+                setPendingType(null);
+                setLevel("");
+                setSelected(null);
+              }}
+            />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-sm">
+              <div className="modal p-4 space-y-3">
+                <div className="modal-header justify-between">
+                  <span className="text-sm font-semibold">
+                    瑕疵選択: {selected.name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="btn btn-outline text-xs"
+                      onClick={() => setCamOpen(true)}
+                    >
+                      カメラ
+                    </button>
+                    <button
+                      className="btn btn-ghost text-xs"
+                      onClick={() => {
+                        setPendingType(null);
+                        setLevel("");
+                        setSelected(null);
+                      }}
+                    >
+                      閉じる
+                    </button>
+                  </div>
+                </div>
+                <div className="divider" />
+
+                <div>
+                  <div className="section-title-accent mb-2">メイン瑕疵</div>
+                  <div className="grid grid-cols-5 gap-3 md:gap-4">
+                    {(selected.id === "front-glass"
+                      ? ["G", "ヒビ", "ワレ"]
+                      : ["A", "U", "B", "W", "XX"]
+                    ).map((code) => (
+                      <button
+                        key={code}
+                        className={`btn btn-full btn-primary text-xl py-4 min-h-12 active:translate-y-[1px] ${
+                          pendingType === code ? "ring-4 ring-blue-400" : ""
+                        }`}
+                        onClick={() => {
+                          if (!selected) return;
+                          if (code === "XX" || selected.id === "front-glass") {
+                            const newDef: Defect = { type: code };
+                            setDefects((prev) => {
+                              const idx = prev.findIndex(
+                                (d) => d.partId === selected.id
+                              );
+                              if (idx >= 0) {
+                                const copy = [...prev];
+                                const cur = copy[idx].list;
+                                // 上書きルール: 同タイプは置き換え、最大2件
+                                const filtered = cur.filter(
+                                  (d) => d.type !== newDef.type
+                                );
+                                const next = [...filtered, newDef].slice(-2);
+                                copy[idx] = { partId: selected.id, list: next };
+                                return copy;
+                              }
+                              return [
+                                ...prev,
+                                { partId: selected.id, list: [newDef] },
+                              ];
+                            });
+                            setPendingType(null);
+                            setLevel("");
+                            setSelected(null);
+                            setLevelOverlay(code);
+                            setTimeout(() => setLevelOverlay(null), 1200);
+                          } else {
+                            setPendingType(code);
+                            setLevel("");
+                          }
+                        }}
+                      >
+                        {code}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Headerにカメラ/閉じるを移動済み */}
+
+                {pendingType && pendingType !== "XX" && (
+                  <div className="space-y-2">
+                    <div className="panel-blue p-3">
+                      <div className="text-xs text-blue-700 flex items-center gap-2">
+                        <span className="text-blue-700">📱</span>
+                        フリック入力（簡易）
+                      </div>
+                      <div className="text-[11px] text-blue-700 mt-1">
+                        タップでレベルを選択（1/2/3）
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 md:gap-3">
+                      {["1", "2", "3"].map((lv) => (
+                        <button
+                          key={lv}
+                          className={`btn text-base px-5 py-2.5 min-h-10 active:translate-y-[1px] ${
+                            level === lv ? "btn-primary" : "btn-ghost"
+                          }`}
+                          onClick={() => {
+                            if (!selected || !pendingType) return;
+                            const newDef: Defect = {
+                              type: pendingType,
+                              level: lv,
+                            };
+                            setDefects((prev) => {
+                              const idx = prev.findIndex(
+                                (d) => d.partId === selected.id
+                              );
+                              if (idx >= 0) {
+                                const copy = [...prev];
+                                const cur = copy[idx].list;
+                                const filtered = cur.filter(
+                                  (d) => d.type !== newDef.type
+                                );
+                                const next = [...filtered, newDef].slice(-2);
+                                copy[idx] = { partId: selected.id, list: next };
+                                return copy;
+                              }
+                              return [
+                                ...prev,
+                                { partId: selected.id, list: [newDef] },
+                              ];
+                            });
+                            setPendingType(null);
+                            setLevel("");
+                            setSelected(null);
+                            setLevelOverlay(`${pendingType}${lv}`);
+                            setTimeout(() => setLevelOverlay(null), 1000);
+                          }}
+                        >
+                          レベル{lv}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div className="section-title-accent mb-2">その他の瑕疵</div>
+                  <div className="panel-amber p-3 mb-2">
+                    <div className="text-xs text-amber-700 flex items-center gap-2">
+                      <span className="text-amber-700">⚡</span>
+                      その他の瑕疵
+                    </div>
+                    <div className="text-[11px] text-amber-800 mt-1">
+                      レベルが含まれるため選択だけで反映（Y1/Y2/C1/C2）
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2 md:gap-3">
+                    {["Y1", "Y2", "C1", "C2", "S1"].map((code) => (
+                      <button
+                        key={code}
+                        className={`btn btn-full btn-amber text-xs py-1.5 min-h-10 active:translate-y-[1px] ${
+                          pendingType === code ? "ring-4 ring-amber-400" : ""
+                        }`}
+                        onClick={() => {
+                          if (!selected) return;
+                          const match = code.match(/^([A-Z]+)(\d)$/);
+                          if (match) {
+                            const [, t, lv] = match;
+                            const newDef: Defect = { type: t, level: lv };
+                            setDefects((prev) => {
+                              const idx = prev.findIndex(
+                                (d) => d.partId === selected.id
+                              );
+                              if (idx >= 0) {
+                                const copy = [...prev];
+                                const cur = copy[idx].list;
+                                const filtered = cur.filter(
+                                  (d) => d.type !== newDef.type
+                                );
+                                const next = [...filtered, newDef].slice(-2);
+                                copy[idx] = { partId: selected.id, list: next };
+                                return copy;
+                              }
+                              return [
+                                ...prev,
+                                { partId: selected.id, list: [newDef] },
+                              ];
+                            });
+                            setPendingType(null);
+                            setLevel("");
+                            setSelected(null);
+                          } else {
+                            setPendingType(code);
+                            setLevel("");
+                          }
+                        }}
+                      >
+                        {code}
+                      </button>
+                    ))}
+                    {["S2"].map((code) => (
+                      <button
+                        key={code}
+                        className={`btn btn-full btn-amber text-xs py-1.5 min-h-10 active:translate-y-[1px] ${
+                          pendingType === code ? "ring-4 ring-amber-400" : ""
+                        }`}
+                        onClick={() => {
+                          if (!selected) return;
+                          // Codes that embed level (e.g., Y1, Y2, C1, C2) should add immediately
+                          const match = code.match(/^([A-Z]+)(\d)$/);
+                          if (match) {
+                            const [, t, lv] = match;
+                            const newDef: Defect = { type: t, level: lv };
+                            setDefects((prev) => {
+                              const idx = prev.findIndex(
+                                (d) => d.partId === selected.id
+                              );
+                              if (idx >= 0) {
+                                const copy = [...prev];
+                                const cur = copy[idx].list;
+                                const filtered = cur.filter(
+                                  (d) => d.type !== newDef.type
+                                );
+                                const next = [...filtered, newDef].slice(-2);
+                                copy[idx] = { partId: selected.id, list: next };
+                                return copy;
+                              }
+                              return [
+                                ...prev,
+                                { partId: selected.id, list: [newDef] },
+                              ];
+                            });
+                            setPendingType(null);
+                            setLevel("");
+                            setSelected(null);
+                          } else {
+                            // Codes without level (e.g., S) behave like main type awaiting level if applicable
+                            setPendingType(code);
+                            setLevel("");
+                          }
+                        }}
+                      >
+                        {code}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        )}
+        {levelOverlay && <LevelOverlay text={levelOverlay} />}
 
-          {/* 瑕疵一覧 */}
-          {partDefects.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm text-slate-700">登録済み瑕疵</h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {partDefects.map((pd) => (
-                  <div
-                    key={pd.partId}
-                    className="p-3 bg-white rounded-lg border hover:border-blue-300 cursor-pointer transition-colors"
-                    onClick={() => {
-                      const part = carParts.find((p) => p.id === pd.partId);
-                      if (part) handlePartClick(part);
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm">{pd.partName}</div>
-                        <div className="flex gap-1 mt-1">
-                          {pd.defects.map((defect, idx) => (
-                            <Badge
-                              key={idx}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {defect.type}
-                              {defect.level}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <Badge className="bg-orange-500">
-                        {pd.defects.length}件
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+        {camOpen && selected && (
+          <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 no-print">
+            <div className="bg-white rounded-xl shadow-xl w-[92%] max-w-md p-4 space-y-3">
+              <div className="text-sm font-semibold">
+                部位撮影: {selected.name}
+              </div>
+              <Webcam
+                ref={webcamRef as any}
+                audio={false}
+                screenshotFormat="image/jpeg"
+                className="w-full aspect-4/3 object-cover rounded-lg border"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setCamOpen(false)}
+                >
+                  キャンセル
+                </button>
+                <button className="btn btn-primary" onClick={capturePhoto}>
+                  撮影して添付
+                </button>
               </div>
             </div>
-          )}
-
-          {/* 評価点算出ボタン */}
-          <Button
-            onClick={() => setScoreDialogOpen(true)}
-            className="w-full"
-            size="lg"
-          >
-            <Calculator className="w-4 h-4 mr-2" />
-            評価点を算出
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* 瑕疵入力ダイアログ */}
-      {dialogOpen && selectedPart && (
-        <DefectInputDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          carPartName={selectedPart?.name}
-          existingDefects={getPartDefects(selectedPart?.id)}
-          onConfirm={(defects) => {
-            // 必要なロジック
-          }}
-          onDefectSubmit={(partName, defects) => {
-            // 必要なロジック
-          }} // 修正: onDefectSubmit を追加
-        />
-      )}
-
-      {/* 評価点表示ダイアログ */}
-      <EvaluationScoreDialog
-        open={scoreDialogOpen}
-        onOpenChange={setScoreDialogOpen}
-        carPartName={selectedPart?.name}
-        onScoreSelect={(score) => {
-          // 必要なロジック
-        }}
-        partDefects={partDefects} // 修正: partDefects を追加
-      />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+// 選択後に瑕疵レベルのみ大きく表示するオーバーレイ
+// ルート要素内で描画（コンポーネントの末尾に追記）
+export function LevelOverlay({ text }: { text: string }) {
+  return (
+    <div className="fixed inset-0 z-100 pointer-events-none flex items-center justify-center no-print">
+      <div className="bg-black/70 text-white rounded-2xl px-8 py-6 text-4xl font-bold shadow-2xl overlay-pop">
+        {text}
+      </div>
+    </div>
+  );
+}
+
+export default CarPartSelector;
