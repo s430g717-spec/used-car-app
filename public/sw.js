@@ -1,4 +1,4 @@
-const CACHE_NAME = "ucev-cache-v5";
+const CACHE_NAME = "ucev-cache-v6";
 const SCOPE = self.registration?.scope || "/";
 const toURL = (p) => new URL(p, SCOPE).toString();
 const ASSETS = [toURL("index.html"), toURL("manifest.webmanifest")];
