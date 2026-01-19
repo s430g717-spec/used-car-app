@@ -6,11 +6,13 @@ import App from "./App";
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     const base = (import.meta as any).env?.BASE_URL || "/";
-    const swUrl = new URL("sw.js", base).toString();
+    const swVersion = "v7"; // bump to force SW update when deployed
+    const swUrl = new URL(`sw.js?v=${swVersion}`, base).toString();
     navigator.serviceWorker
       .register(swUrl)
       .then((reg) => {
         if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        reg.update?.();
       })
       .catch(() => {
         // silent failure
