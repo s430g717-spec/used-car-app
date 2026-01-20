@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import VehicleSpecsInput from "./components/VehicleSpecsInput";
 import InventoryList from "./components/InventoryList";
 import InventoryEditDialog from "./components/InventoryEditDialog";
-import { loadInventory, upsertItem } from "./lib/inventoryStore";
 import InventoryDetailDialog from "./components/InventoryDetailDialog";
 import DocumentChecklist from "./components/DocumentChecklist";
 import ImageStorageToolsDialog from "./components/ImageStorageToolsDialog";
@@ -151,12 +150,12 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto px-4 py-6 md:py-8 max-w-7xl">
+      <main className="mx-auto px-4 py-6 md:py-8 pb-28 max-w-7xl">
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 mb-6 md:mb-8 gap-1 md:gap-0">
+          <TabsList className="pill-tabs grid w-full grid-cols-3 md:grid-cols-5 mb-6 md:mb-8 gap-1 md:gap-0">
             <TabsTrigger
               value="parts"
-              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3"
+              className="pill-trigger flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3"
             >
               <Layout className="w-4 h-4" />
               <span className="hidden sm:inline">瑕疵</span>
@@ -164,7 +163,7 @@ export default function App() {
             </TabsTrigger>
             <TabsTrigger
               value="evaluation"
-              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3"
+              className="pill-trigger flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3"
             >
               <Car className="w-4 h-4" />
               <span className="hidden sm:inline">評価</span>
@@ -172,7 +171,7 @@ export default function App() {
             </TabsTrigger>
             <TabsTrigger
               value="history"
-              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3 md:col-span-1"
+              className="pill-trigger flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3 md:col-span-1"
             >
               <Package className="w-4 h-4" />
               <span className="hidden sm:inline">在庫</span>
@@ -180,14 +179,14 @@ export default function App() {
             </TabsTrigger>
             <TabsTrigger
               value="specs"
-              className="hidden md:flex items-center gap-2 text-sm p-3"
+              className="pill-trigger hidden md:flex items-center gap-2 text-sm p-3"
             >
               <List className="w-4 h-4" />
               諸元
             </TabsTrigger>
             <TabsTrigger
               value="docs"
-              className="hidden md:flex items-center gap-2 text-sm p-3"
+              className="pill-trigger hidden md:flex items-center gap-2 text-sm p-3"
             >
               <List className="w-4 h-4" />
               書類
@@ -284,22 +283,6 @@ export default function App() {
                   });
                   setEditOpen(true);
                 }}
-                onApplyDefects={(id) => {
-                  const persisted = loadInventory();
-                  const found = persisted.find((i) => i.id === id);
-                  if (!found) {
-                    alert(
-                      "この在庫はサンプルです。諸元入力から保存した在庫に対して反映してください。"
-                    );
-                    return;
-                  }
-                  const updated = {
-                    ...found,
-                    partDefects: partDefects ?? [],
-                  };
-                  upsertItem(updated);
-                  alert("現在の瑕疵を在庫へ反映しました");
-                }}
                 onViewDetail={(item) => {
                   setDetailItem({
                     id: item.id,
@@ -327,51 +310,58 @@ export default function App() {
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-t md:hidden">
         <div className="grid grid-cols-5">
           <button
-            className={`py-3 text-xs ${
+            className={`py-3 text-[11px] flex flex-col items-center gap-1 ${
               tab === "parts"
-                ? "text-slate-900 font-semibold"
+                ? "text-slate-900 font-semibold bg-slate-100"
                 : "text-slate-600"
             }`}
             onClick={() => setTab("parts")}
           >
+            <Layout className="w-4 h-4" />
             瑕疵
           </button>
           <button
-            className={`py-3 text-xs ${
+            className={`py-3 text-[11px] flex flex-col items-center gap-1 ${
               tab === "evaluation"
-                ? "text-slate-900 font-semibold"
+                ? "text-slate-900 font-semibold bg-slate-100"
                 : "text-slate-600"
             }`}
             onClick={() => setTab("evaluation")}
           >
+            <Car className="w-4 h-4" />
             評価
           </button>
           <button
-            className={`py-3 text-xs ${
+            className={`py-3 text-[11px] flex flex-col items-center gap-1 ${
               tab === "history"
-                ? "text-slate-900 font-semibold"
+                ? "text-slate-900 font-semibold bg-slate-100"
                 : "text-slate-600"
             }`}
             onClick={() => setTab("history")}
           >
+            <Package className="w-4 h-4" />
             在庫
           </button>
           <button
-            className={`py-3 text-xs ${
+            className={`py-3 text-[11px] flex flex-col items-center gap-1 ${
               tab === "specs"
-                ? "text-slate-900 font-semibold"
+                ? "text-slate-900 font-semibold bg-slate-100"
                 : "text-slate-600"
             }`}
             onClick={() => setTab("specs")}
           >
+            <List className="w-4 h-4" />
             諸元
           </button>
           <button
-            className={`py-3 text-xs ${
-              tab === "docs" ? "text-slate-900 font-semibold" : "text-slate-600"
+            className={`py-3 text-[11px] flex flex-col items-center gap-1 ${
+              tab === "docs"
+                ? "text-slate-900 font-semibold bg-slate-100"
+                : "text-slate-600"
             }`}
             onClick={() => setTab("docs")}
           >
+            <FileText className="w-4 h-4" />
             書類
           </button>
         </div>

@@ -40,13 +40,11 @@ export default function InventoryList({
   onViewReport,
   onViewInvoice,
   onEdit,
-  onApplyDefects,
   onViewDetail,
 }: {
   onViewReport?: (item: Item) => void;
   onViewInvoice?: (item: Item) => void;
   onEdit?: (item: Item) => void;
-  onApplyDefects?: (id: string) => void;
   onViewDetail?: (item: Item) => void;
 }) {
   const [items, setItems] = useState<Item[]>([
@@ -193,16 +191,6 @@ export default function InventoryList({
               }
             >
               詳細
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() =>
-                onApplyDefects
-                  ? onApplyDefects(it.id)
-                  : alert("現在の瑕疵をこの在庫へ反映しました")
-              }
-            >
-              瑕疵を反映
             </Button>
             <Button
               variant="outline"

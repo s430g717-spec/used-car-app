@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Info } from "lucide-react";
 import { upsertItem, loadInventory } from "../lib/inventoryStore";
-import { calculateFinalScore, QUICK_REFERENCE } from "../utils/evaluationLogic";
+import { calculateFinalScore } from "../utils/evaluationLogic";
 
 export default function EvaluationInput() {
   const [overallRating, setOverallRating] = useState<string>("");
@@ -64,30 +64,12 @@ export default function EvaluationInput() {
           </label>
         </div>
 
-        <button className="btn btn-ghost text-xs w-fit" title={QUICK_REFERENCE}>
-          早見表 (距離上限)
-        </button>
-
         {/* 評価点算出（参考値） */}
-        <div className="section-card p-4 space-y-2">
+        <div className="section-card p-4 space-y-3">
           <div className="text-sm font-semibold text-slate-800">
             評価点算出（参考値）
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100">
-              <div className="text-xs">走行距離制限</div>
-              <div className="text-lg font-bold">
-                {finalScore.caps.distanceLabel} 点
-              </div>
-            </div>
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-100">
-              <div className="text-xs">内外装点</div>
-              <div className="text-lg font-bold">
-                {finalScore.caps.baseFromInterior.toFixed(1)} 点
-              </div>
-            </div>
-          </div>
-          <div className="p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-slate-900 text-white flex items-center justify-between">
             <div className="text-sm opacity-80">総合評価点 (参考)</div>
             <div className="text-3xl font-bold">{finalScore.label}</div>
           </div>

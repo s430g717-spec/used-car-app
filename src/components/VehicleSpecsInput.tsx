@@ -6,9 +6,8 @@ import { Button } from "./ui/button";
 import { upsertItem, loadInventory } from "../lib/inventoryStore";
 import type { InventoryItem } from "../lib/inventoryStore";
 import { QRScanner } from "./QRScanner";
-import { saveImageFromDataUrl, getImageDataUrl } from "../lib/idb";
+import { saveImageFromDataUrl } from "../lib/idb";
 import ResolvedImg from "./ResolvedImg";
-import ImageCropDialog from "./ImageCropDialog";
 
 type Specs = { year: string; carName: string; vin: string };
 
@@ -25,7 +24,6 @@ export default function VehicleSpecsInput() {
   const [qrOpen, setQrOpen] = useState<boolean>(false);
   const [grade, setGrade] = useState<string>("");
   const [colorNo, setColorNo] = useState<string>("");
-  const [cropOpen, setCropOpen] = useState<boolean>(false);
   const equipmentItems = [
     "サンルーフ",
     "レザーシート",
@@ -89,76 +87,6 @@ export default function VehicleSpecsInput() {
   const capture = () => {
     const shot = webcamRef.current?.getScreenshot();
     if (shot) compressAndSet(shot);
-  };
-
-  const preprocessImage = async (dataUrl: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          resolve(dataUrl);
-          return;
-        }
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const d = imageData.data;
-        for (let i = 0; i < d.length; i += 4) {
-          const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-          const contrasted = Math.min(
-            255,
-            Math.max(0, (gray - 128) * 1.4 + 128)
-          );
-          d[i] = d[i + 1] = d[i + 2] = contrasted;
-        }
-        ctx.putImageData(imageData, 0, 0);
-        resolve(canvas.toDataURL("image/png"));
-      };
-      img.src = dataUrl;
-    });
-  };
-
-  const extractFromText = (txt: string) => {
-    const modelMatch = txt.match(/[A-Z]{2,}[A-Z]*-?[0-9]{2,}/i);
-    const emissionsMatch = txt.match(/\b[0-9][A-Z]{2,3}\b/i);
-    const serialMatch = txt.match(/\b[0-9]{6,8}\b/);
-    return {
-      modelType: modelMatch?.[0]?.toUpperCase() || "",
-      vinEmissions: emissionsMatch?.[0]?.toUpperCase() || "",
-      vinSerial: serialMatch?.[0] || "",
-    };
-  };
-
-  const autoFillFromImage = async () => {
-    if (!carImage) {
-      alert("先に撮影または画像選択をしてください");
-      return;
-    }
-    try {
-      const { default: Tesseract } = await import("tesseract.js");
-      const srcForOcr = carImage.startsWith("idb:")
-        ? (await getImageDataUrl(carImage.slice(4))) || ""
-        : carImage;
-      const pre = await preprocessImage(srcForOcr);
-      const result = await Tesseract.recognize(pre, "eng", {
-        logger: () => {},
-      });
-      const {
-        modelType: mtRec,
-        vinEmissions: emRec,
-        vinSerial: snRec,
-      } = extractFromText(result.data.text || "");
-      if (mtRec) setModelType(mtRec);
-      if (emRec) setVinEmissions(emRec);
-      if (snRec) setVinSerial(snRec);
-      if (!mtRec && !emRec && !snRec)
-        alert("OCRでは項目を特定できませんでした");
-    } catch (e) {
-      alert("OCRの解析に失敗しました");
-    }
   };
 
   const handleQRScan = (data: any) => {
@@ -314,22 +242,6 @@ export default function VehicleSpecsInput() {
             </Button>
             <Button
               variant="outline"
-              onClick={autoFillFromImage}
-              className="gap-2"
-            >
-              <ScanLine className="size-4" /> OCRで自動反映
-            </Button>
-            {carImage && (
-              <Button
-                variant="outline"
-                onClick={() => setCropOpen(true)}
-                className="gap-2"
-              >
-                <ScanLine className="size-4" /> OCR前に切り出し
-              </Button>
-            )}
-            <Button
-              variant="outline"
               onClick={() => setQrOpen(true)}
               className="gap-2"
             >
@@ -355,8 +267,7 @@ export default function VehicleSpecsInput() {
             )}
           </div>
           <div className="mt-2 text-xs text-slate-600">
-            ※
-            型式・車体番号・グレードを自動認識します（撮影画像からの自動反映は現状試験的対応）
+            ※ QR読取か手動入力で登録してください
           </div>
         </div>
 
@@ -564,7 +475,7 @@ export default function VehicleSpecsInput() {
         </div>
         <div className="text-xs text-slate-500">
           ※
-          型式・車体番号・グレードを自動認識します（撮影画像からの自動反映は将来対応）
+          撮影画像は保存のみ。型式や車体番号は手動入力またはQR読取で設定してください。
         </div>
       </div>
 
@@ -612,16 +523,6 @@ export default function VehicleSpecsInput() {
 
       {/* QR Scanner Modal */}
       <QRScanner open={qrOpen} onOpenChange={setQrOpen} onScan={handleQRScan} />
-
-      {/* Crop Dialog */}
-      {carImage && (
-        <ImageCropDialog
-          open={cropOpen}
-          onOpenChange={setCropOpen}
-          src={carImage}
-          onCropped={(newSrc) => setCarImage(newSrc)}
-        />
-      )}
     </div>
   );
 }
