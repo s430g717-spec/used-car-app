@@ -1,5 +1,5 @@
 // Simple service worker for offline cache
-const CACHE_NAME = "ucev-cache-v1";
+const CACHE_NAME = "ucev-cache-v8";
 const ASSETS = ["/", "/index.html"];
 
 self.addEventListener("install", (event: any) => {

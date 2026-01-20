@@ -38,38 +38,6 @@ export function CarPartSelector({
   const [camOpen, setCamOpen] = useState(false);
   const webcamRef = useRef<Webcam | null>(null);
 
-  // Toggle-add or remove a defect; replaces same type with new level and removes on re-tap
-  const toggleDefect = (partId: string, newDef: Defect) => {
-    let added = false;
-    setDefects((prev) => {
-      const idx = prev.findIndex((d) => d.partId === partId);
-      const current = idx >= 0 ? prev[idx].list : [];
-      const sameIdx = current.findIndex(
-        (d) => d.type === newDef.type && d.level === newDef.level
-      );
-
-      let nextList: Defect[];
-      if (sameIdx >= 0) {
-        nextList = current.filter((_, i) => i !== sameIdx);
-      } else {
-        const filtered = current.filter((d) => d.type !== newDef.type);
-        nextList = [...filtered, newDef].slice(-2);
-        added = true;
-      }
-
-      if (nextList.length === 0) {
-        if (idx < 0) return prev;
-        return prev.filter((_, i) => i !== idx);
-      }
-
-      const copy = [...prev];
-      if (idx >= 0) copy[idx] = { partId, list: nextList, photos: prev[idx].photos };
-      else copy.push({ partId, list: nextList });
-      return copy;
-    });
-    return added;
-  };
-
   useEffect(() => {
     if (onDefectsChange) onDefectsChange(defects);
   }, [defects, onDefectsChange]);
@@ -165,14 +133,25 @@ export function CarPartSelector({
                 onPointerUp={() => {
                   setPressedId(null);
                   setSelected(p);
-                            const added = toggleDefect(selected.id, { type: code });
+                }}
+                onPointerCancel={() => setPressedId(null)}
+                onClick={() => setSelected(p)}
+                onMouseEnter={() => setPressedId(p.id)}
+                onMouseLeave={() => setPressedId(null)}
+                style={{ cursor: "pointer" }}
+              />
+              <rect
+                x={p.x}
+                y={p.y}
+                width={p.w}
+                height={p.h}
+                fill="transparent"
+                stroke="none"
                 opacity={0}
                 pointerEvents="none"
               />
-                            if (added) {
-                              setLevelOverlay(code);
-                              setTimeout(() => setLevelOverlay(null), 1200);
-                            }
+              <rect
+                x={p.x - 1}
                 y={p.y - 1}
                 width={p.w + 2}
                 height={p.h + 2}
@@ -250,6 +229,16 @@ export function CarPartSelector({
                     >
                       カメラ
                     </button>
+                    <button
+                      className="btn btn-ghost text-xs"
+                      onClick={() => {
+                        setPendingType(null);
+                        setLevel("");
+                        setSelected(null);
+                      }}
+                    >
+                      閉じる
+                    </button>
                   </div>
                 </div>
                 <div className="divider" />
@@ -269,14 +258,32 @@ export function CarPartSelector({
                         onClick={() => {
                           if (!selected) return;
                           if (code === "XX" || selected.id === "front-glass") {
-                            const added = toggleDefect(selected.id, { type: code });
+                            const newDef: Defect = { type: code };
+                            setDefects((prev) => {
+                              const idx = prev.findIndex(
+                                (d) => d.partId === selected.id
+                              );
+                              if (idx >= 0) {
+                                const copy = [...prev];
+                                const cur = copy[idx].list;
+                                // 上書きルール: 同タイプは置き換え、最大2件
+                                const filtered = cur.filter(
+                                  (d) => d.type !== newDef.type
+                                );
+                                const next = [...filtered, newDef].slice(-2);
+                                copy[idx] = { partId: selected.id, list: next };
+                                return copy;
+                              }
+                              return [
+                                ...prev,
+                                { partId: selected.id, list: [newDef] },
+                              ];
+                            });
                             setPendingType(null);
                             setLevel("");
                             setSelected(null);
-                            if (added) {
-                              setLevelOverlay(code);
-                              setTimeout(() => setLevelOverlay(null), 1200);
-                            }
+                            setLevelOverlay(code);
+                            setTimeout(() => setLevelOverlay(null), 1200);
                           } else {
                             setPendingType(code);
                             setLevel("");
@@ -311,17 +318,34 @@ export function CarPartSelector({
                           }`}
                           onClick={() => {
                             if (!selected || !pendingType) return;
-                            const added = toggleDefect(selected.id, {
+                            const newDef: Defect = {
                               type: pendingType,
                               level: lv,
+                            };
+                            setDefects((prev) => {
+                              const idx = prev.findIndex(
+                                (d) => d.partId === selected.id
+                              );
+                              if (idx >= 0) {
+                                const copy = [...prev];
+                                const cur = copy[idx].list;
+                                const filtered = cur.filter(
+                                  (d) => d.type !== newDef.type
+                                );
+                                const next = [...filtered, newDef].slice(-2);
+                                copy[idx] = { partId: selected.id, list: next };
+                                return copy;
+                              }
+                              return [
+                                ...prev,
+                                { partId: selected.id, list: [newDef] },
+                              ];
                             });
                             setPendingType(null);
                             setLevel("");
                             setSelected(null);
-                            if (added) {
-                              setLevelOverlay(`${pendingType}${lv}`);
-                              setTimeout(() => setLevelOverlay(null), 1000);
-                            }
+                            setLevelOverlay(`${pendingType}${lv}`);
+                            setTimeout(() => setLevelOverlay(null), 1000);
                           }}
                         >
                           レベル{lv}
@@ -332,6 +356,15 @@ export function CarPartSelector({
                 )}
                 <div>
                   <div className="section-title-accent mb-2">その他の瑕疵</div>
+                  <div className="panel-amber p-3 mb-2">
+                    <div className="text-xs text-amber-700 flex items-center gap-2">
+                      <span className="text-amber-700">⚡</span>
+                      その他の瑕疵
+                    </div>
+                    <div className="text-[11px] text-amber-800 mt-1">
+                      レベルが含まれるため選択だけで反映（Y1/Y2/C1/C2）
+                    </div>
+                  </div>
                   <div className="grid grid-cols-5 gap-2 md:gap-3">
                     {["Y1", "Y2", "C1", "C2", "S1"].map((code) => (
                       <button
@@ -344,7 +377,26 @@ export function CarPartSelector({
                           const match = code.match(/^([A-Z]+)(\d)$/);
                           if (match) {
                             const [, t, lv] = match;
-                            toggleDefect(selected.id, { type: t, level: lv });
+                            const newDef: Defect = { type: t, level: lv };
+                            setDefects((prev) => {
+                              const idx = prev.findIndex(
+                                (d) => d.partId === selected.id
+                              );
+                              if (idx >= 0) {
+                                const copy = [...prev];
+                                const cur = copy[idx].list;
+                                const filtered = cur.filter(
+                                  (d) => d.type !== newDef.type
+                                );
+                                const next = [...filtered, newDef].slice(-2);
+                                copy[idx] = { partId: selected.id, list: next };
+                                return copy;
+                              }
+                              return [
+                                ...prev,
+                                { partId: selected.id, list: [newDef] },
+                              ];
+                            });
                             setPendingType(null);
                             setLevel("");
                             setSelected(null);
@@ -369,7 +421,26 @@ export function CarPartSelector({
                           const match = code.match(/^([A-Z]+)(\d)$/);
                           if (match) {
                             const [, t, lv] = match;
-                            toggleDefect(selected.id, { type: t, level: lv });
+                            const newDef: Defect = { type: t, level: lv };
+                            setDefects((prev) => {
+                              const idx = prev.findIndex(
+                                (d) => d.partId === selected.id
+                              );
+                              if (idx >= 0) {
+                                const copy = [...prev];
+                                const cur = copy[idx].list;
+                                const filtered = cur.filter(
+                                  (d) => d.type !== newDef.type
+                                );
+                                const next = [...filtered, newDef].slice(-2);
+                                copy[idx] = { partId: selected.id, list: next };
+                                return copy;
+                              }
+                              return [
+                                ...prev,
+                                { partId: selected.id, list: [newDef] },
+                              ];
+                            });
                             setPendingType(null);
                             setLevel("");
                             setSelected(null);
