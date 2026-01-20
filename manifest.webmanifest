@@ -1,0 +1,21 @@
+{
+  "name": "中古車評価点自動算出システム",
+  "short_name": "評価システム",
+  "start_url": "/used-car-app/",
+  "scope": "/used-car-app/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "/used-car-app/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/used-car-app/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
