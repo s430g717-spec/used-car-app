@@ -4,22 +4,100 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Info } from "lucide-react";
 import { upsertItem, loadInventory } from "../lib/inventoryStore";
+import { calculateFinalScore, QUICK_REFERENCE } from "../utils/evaluationLogic";
 
 export default function EvaluationInput() {
   const [overallRating, setOverallRating] = useState<string>("");
-  const [interiorRating, setInteriorRating] = useState<string>("");
+  const [interiorRating, setInteriorRating] = useState<string>("A");
   const [inspectorNote, setInspectorNote] = useState<string>("");
   const [inventory, setInventory] = useState<any[]>([]);
   const [targetId, setTargetId] = useState<string>("__new__");
+  const [mileage, setMileage] = useState<string>("");
 
   useEffect(() => {
     setInventory(loadInventory());
   }, []);
 
+  const finalScore = calculateFinalScore({
+    mileageKm: Number(mileage) || 0,
+    interiorRank: interiorRating as any,
+    defects: [],
+  });
+
   return (
     <div className="p-4">
       <div className="card p-4 space-y-4">
         <h2 className="text-lg font-semibold">評価入力</h2>
+
+        {/* 走行距離と内外装ランク */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <label className="form-control">
+            <span className="label text-sm font-medium text-slate-700">
+              走行距離 (km)
+            </span>
+            <input
+              type="number"
+              min={0}
+              className="input"
+              value={mileage}
+              onChange={(e) => setMileage(e.target.value)}
+              placeholder="例: 50000"
+              inputMode="numeric"
+            />
+          </label>
+
+          <label className="form-control">
+            <span className="label text-sm font-medium text-slate-700">
+              内外装ランク
+            </span>
+            <select
+              className="input"
+              value={interiorRating}
+              onChange={(e) => setInteriorRating(e.target.value)}
+            >
+              {["A", "B", "C", "D", "E"].map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <button className="btn btn-ghost text-xs w-fit" title={QUICK_REFERENCE}>
+          早見表 (距離上限)
+        </button>
+
+        {/* 評価点算出（参考値） */}
+        <div className="section-card p-4 space-y-2">
+          <div className="text-sm font-semibold text-slate-800">
+            評価点算出（参考値）
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100">
+              <div className="text-xs">走行距離制限</div>
+              <div className="text-lg font-bold">
+                {finalScore.caps.distanceLabel} 点
+              </div>
+            </div>
+            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-100">
+              <div className="text-xs">内外装点</div>
+              <div className="text-lg font-bold">
+                {finalScore.caps.baseFromInterior.toFixed(1)} 点
+              </div>
+            </div>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between">
+            <div className="text-sm opacity-80">総合評価点 (参考)</div>
+            <div className="text-3xl font-bold">{finalScore.label}</div>
+          </div>
+          <div className="text-xs text-slate-600 space-y-1">
+            {finalScore.reasons.map((r, i) => (
+              <div key={i}>・{r}</div>
+            ))}
+          </div>
+        </div>
+
         {/* 大きなプレビュー表示 */}
         <div className="grid grid-cols-2 gap-3">
           <div className="panel-indigo p-4 text-center">

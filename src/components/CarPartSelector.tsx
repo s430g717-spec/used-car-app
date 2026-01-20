@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { DIAGRAM_SRC, STEP_Y, parts as baseParts } from "../lib/parts";
-import { calculateFinalScore, QUICK_REFERENCE } from "../utils/evaluationLogic";
 import { saveImageFromDataUrl } from "../lib/idb";
 
 type Part = {
@@ -38,14 +37,6 @@ export function CarPartSelector({
   const [levelOverlay, setLevelOverlay] = useState<string | null>(null);
   const [camOpen, setCamOpen] = useState(false);
   const webcamRef = useRef<Webcam | null>(null);
-  const [mileage, setMileage] = useState<string>("");
-  const [interiorRank, setInteriorRank] = useState("A");
-
-  const finalScore = calculateFinalScore({
-    mileageKm: Number(mileage) || 0,
-    interiorRank: interiorRank as any,
-    defects,
-  });
 
   useEffect(() => {
     if (onDefectsChange) onDefectsChange(defects);
@@ -120,78 +111,6 @@ export function CarPartSelector({
           >
             {isFullscreen ? "縮小" : "全画面"}
           </button>
-        </div>
-
-        <div className="p-4 grid md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <label className="form-control">
-              <span className="label text-sm font-medium text-slate-700">
-                走行距離 (km)
-              </span>
-              <input
-                type="number"
-                min={0}
-                className="input"
-                value={mileage}
-                onChange={(e) => setMileage(e.target.value)}
-                placeholder="例: 50000"
-                inputMode="numeric"
-              />
-            </label>
-
-            <label className="form-control">
-              <span className="label text-sm font-medium text-slate-700">
-                内外装ランク
-              </span>
-              <select
-                className="input"
-                value={interiorRank}
-                onChange={(e) => setInteriorRank(e.target.value)}
-              >
-                {["A", "B", "C", "D", "E"].map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <button
-              className="btn btn-ghost text-xs w-fit"
-              title={QUICK_REFERENCE}
-            >
-              早見表 (距離上限)
-            </button>
-          </div>
-
-          <div className="section-card p-4 space-y-2">
-            <div className="text-sm font-semibold text-slate-800">
-              評価点算出（参考値）
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-100">
-                <div className="text-xs">走行距離制限</div>
-                <div className="text-lg font-bold">
-                  {finalScore.caps.distanceLabel} 点
-                </div>
-              </div>
-              <div className="p-2 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-100">
-                <div className="text-xs">内外装点</div>
-                <div className="text-lg font-bold">
-                  {finalScore.caps.baseFromInterior.toFixed(1)} 点
-                </div>
-              </div>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between">
-              <div className="text-sm opacity-80">総合評価点 (参考)</div>
-              <div className="text-3xl font-bold">{finalScore.label}</div>
-            </div>
-            <div className="text-xs text-slate-600 space-y-1">
-              {finalScore.reasons.map((r, i) => (
-                <div key={i}>・{r}</div>
-              ))}
-            </div>
-          </div>
         </div>
 
         <svg
