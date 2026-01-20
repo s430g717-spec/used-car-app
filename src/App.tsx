@@ -122,20 +122,22 @@ export default function App() {
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-slate-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-6">
+        <div className="mx-auto px-4 py-6 max-w-7xl">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-600 p-3 rounded-lg">
-                <Car className="w-8 h-8 text-white" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="bg-blue-600 p-2 md:p-3 rounded-lg flex-shrink-0">
+                <Car className="w-6 h-6 md:w-8 md:h-8 text-white" />
               </div>
-              <div>
-                <h1 className="text-slate-900">中古車評価点自動算出システム</h1>
-                <p className="text-slate-600 text-sm">
-                  Used Car Evaluation System
+              <div className="min-w-0">
+                <h1 className="text-slate-900 text-sm md:text-base font-semibold truncate">
+                  中古車評価システム
+                </h1>
+                <p className="text-slate-600 text-xs md:text-sm hidden sm:block">
+                  Used Car Evaluation
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 className="btn btn-primary hidden sm:inline-flex gap-2"
                 onClick={openSampleReport}
@@ -149,26 +151,44 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="mx-auto px-4 py-6 md:py-8 max-w-7xl">
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid w-full max-w-4xl mx-auto grid-cols-5 mb-8">
-            <TabsTrigger value="parts" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 mb-6 md:mb-8 gap-1 md:gap-0">
+            <TabsTrigger
+              value="parts"
+              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3"
+            >
               <Layout className="w-4 h-4" />
-              瑕疵入力
+              <span className="hidden sm:inline">瑕疵</span>
+              <span className="sm:hidden">瑕</span>
             </TabsTrigger>
-            <TabsTrigger value="evaluation" className="flex items-center gap-2">
+            <TabsTrigger
+              value="evaluation"
+              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3"
+            >
               <Car className="w-4 h-4" />
-              評価入力
+              <span className="hidden sm:inline">評価</span>
+              <span className="sm:hidden">評</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
+            <TabsTrigger
+              value="history"
+              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm p-2 md:p-3 md:col-span-1"
+            >
               <Package className="w-4 h-4" />
-              在庫管理
+              <span className="hidden sm:inline">在庫</span>
+              <span className="sm:hidden">在</span>
             </TabsTrigger>
-            <TabsTrigger value="specs" className="flex items-center gap-2">
+            <TabsTrigger
+              value="specs"
+              className="hidden md:flex items-center gap-2 text-sm p-3"
+            >
               <List className="w-4 h-4" />
-              諸元入力
+              諸元
             </TabsTrigger>
-            <TabsTrigger value="docs" className="flex items-center gap-2">
+            <TabsTrigger
+              value="docs"
+              className="hidden md:flex items-center gap-2 text-sm p-3"
+            >
               <List className="w-4 h-4" />
               書類
             </TabsTrigger>
@@ -179,21 +199,21 @@ export default function App() {
           </TabsContent>
 
           <TabsContent value="evaluation">
-            <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-              <div>
+            <div className="grid lg:grid-cols-2 gap-4 md:gap-8 w-full">
+              <div className="w-full">
                 <EvaluationInput />
               </div>
-              <div className="lg:sticky lg:top-8 h-fit">
+              <div className="w-full lg:sticky lg:top-8 h-fit">
                 {currentEvaluation ? (
                   <EvaluationResult
                     evaluation={currentEvaluation}
                     onViewReport={() => handleViewReport(currentEvaluation)}
                   />
                 ) : (
-                  <div className="section-card p-12 text-center">
-                    <Car className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">
-                      評価入力タブから評価を選択してください
+                  <div className="section-card p-8 md:p-12 text-center">
+                    <Car className="w-12 md:w-16 h-12 md:h-16 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500 text-sm md:text-base">
+                      評価入力から評価を選択してください
                     </p>
                   </div>
                 )}
